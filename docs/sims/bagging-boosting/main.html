@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bagging 与 Boosting</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+canvas { width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:6px; background:#fff; }
+.kpi { display:flex; gap:16px; flex-wrap:wrap; font-size:13px; margin-top:6px; }
+.kpi b { font-variant-numeric:tabular-nums; }
+.lg span { display:inline-block; margin-right:12px; font-size:12px; color:var(--muted); }
+.lg i { display:inline-block; width:14px; height:3px; vertical-align:middle; margin-right:4px; }
+</style>
+</head>
+<body>
+<h1>Bagging 与 Boosting：许多棵树怎样合成一个好模型</h1>
+<div class="sub">同一组带噪声的数据，左右切换两种集成方法。每点一次“加树”，就多训练一棵回归树，看预测曲线和误差怎样变化。</div>
+<div class="row">
+  <button id="mB" class="on">Boosting（梯度提升）</button>
+  <button id="mG">Bagging（随机森林式平均）</button>
+</div>
+<div class="row" id="lrRow">
+  <span>学习率</span><input type="range" id="lr" min="0.05" max="1" step="0.05" value="0.3"><b id="lrv">0.30</b>
+  <span>每棵树深度</span><select id="dep"><option value="1">1（树桩）</option><option value="2" selected>2</option><option value="3">3</option></select>
+</div>
+<div class="row" id="bgRow" style="display:none">
+  <span>每棵树深度</span><select id="depB"><option value="3">3</option><option value="5" selected>5</option><option value="8">8（几乎不剪枝）</option></select>
+</div>
+<div class="row">
+  <button class="main" id="add1">加 1 棵树</button>
+  <button id="add10">加 10 棵树</button>
+  <button id="reset">重置</button>
+</div>
+<canvas id="cv" width="720" height="300"></canvas>
+<div class="lg"><span><i style="background:#90a4ae"></i>训练点</span><span><i style="background:#ffb74d"></i>测试点</span><span><i style="background:#3f51b5"></i>集成预测</span><span id="lgExtra"><i style="background:#c5cae9"></i>最新一棵树</span></div>
+<div class="kpi"><span>树的数量 <b id="nT">0</b></span><span>训练误差（MSE） <b id="trE">-</b></span><span>测试误差（MSE） <b id="teE">-</b></span></div>
+<canvas id="cv2" width="720" height="140"></canvas>
+<div class="note">下图：横轴是树的数量，蓝线是训练误差，橙线是测试误差。Boosting 的学习率调大到 1、深度 3 时，注意测试误差是否先降后升。</div>
+<script>
+(function () {
+  // 固定种子的伪随机数，保证每次打开数据相同
+  var seed = 7; function rnd() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function gauss() { var u = rnd() || 1e-9, v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+  function f(x) { return Math.sin(x) + 0.3 * x; }
+  function make(n) { var a = []; for (var i = 0; i < n; i++) { var x = rnd() * 6; a.push([x, f(x) + 0.35 * gauss()]); } return a.sort(function (p, q) { return p[0] - q[0]; }); }
+  var train = make(40), test = make(60);
+  // 一维回归树：按误差平方和选最佳切分点
+  function fit(pts, depth) {
+    var m = pts.reduce(function (s, p) { return s + p[1]; }, 0) / pts.length;
+    if (depth === 0 || pts.length < 4) return { v: m };
+    var best = null, bs = Infinity;
+    for (var i = 2; i <= pts.length - 2; i++) {
+      if (pts[i][0] === pts[i - 1][0]) continue;
+      var L = pts.slice(0, i), R = pts.slice(i), s = sse(L) + sse(R);
+      if (s < bs) { bs = s; best = i; }
+    }
+    if (best === null) return { v: m };
+    return { t: (pts[best - 1][0] + pts[best][0]) / 2, l: fit(pts.slice(0, best), depth - 1), r: fit(pts.slice(best), depth - 1) };
+  }
+  function sse(a) { var m = a.reduce(function (s, p) { return s + p[1]; }, 0) / a.length; return a.reduce(function (s, p) { return s + (p[1] - m) * (p[1] - m); }, 0); }
+  function pred(t, x) { while (t.t !== undefined) t = x <= t.t ? t.l : t.r; return t.v; }
+  var mode = "B", trees, base, hist;
+  function ens(x) {
+    if (mode === "B") { var lr = +document.getElementById("lr").value, y = base; trees.forEach(function (t) { y += lr * pred(t, x); }); return y; }
+    if (!trees.length) return base;
+    return trees.reduce(function (s, t) { return s + pred(t, x); }, 0) / trees.length;
+  }
+  function mse(d) { return d.reduce(function (s, p) { var e = p[1] - ens(p[0]); return s + e * e; }, 0) / d.length; }
+  function reset() { seed = 99; trees = []; base = train.reduce(function (s, p) { return s + p[1]; }, 0) / train.length; hist = [[mse(train), mse(test)]]; draw(); }
+  function addTree() {
+    if (mode === "B") {
+      var res = train.map(function (p) { return [p[0], p[1] - ens(p[0])]; });
+      trees.push(fit(res, +document.getElementById("dep").value));
+    } else {
+      var s = []; for (var i = 0; i < train.length; i++) s.push(train[Math.floor(rnd() * train.length)]);
+      s.sort(function (p, q) { return p[0] - q[0]; });
+      trees.push(fit(s, +document.getElementById("depB").value));
+    }
+    hist.push([mse(train), mse(test)]);
+  }
+  var cv = document.getElementById("cv"), c = cv.getContext("2d"), cv2 = document.getElementById("cv2"), c2 = cv2.getContext("2d");
+  function X(x) { return 30 + x / 6 * (cv.width - 40); } function Y(y) { return cv.height - 15 - (y + 1) / 3.6 * (cv.height - 30); }
+  function draw() {
+    c.clearRect(0, 0, cv.width, cv.height);
+    c.strokeStyle = "#eceff1"; c.beginPath(); c.moveTo(30, Y(0)); c.lineTo(cv.width - 10, Y(0)); c.stroke();
+    function dots(d, col) { c.fillStyle = col; d.forEach(function (p) { c.beginPath(); c.arc(X(p[0]), Y(p[1]), 3.2, 0, 7); c.fill(); }); }
+    dots(test, "#ffb74d"); dots(train, "#90a4ae");
+    function curve(fn, col, w) { c.strokeStyle = col; c.lineWidth = w; c.beginPath(); for (var i = 0; i <= 600; i++) { var x = i / 100; var y = fn(x); i ? c.lineTo(X(x), Y(y)) : c.moveTo(X(x), Y(y)); } c.stroke(); }
+    if (trees.length) {
+      var last = trees[trees.length - 1];
+      if (mode === "G") curve(function (x) { return pred(last, x); }, "#c5cae9", 1.5);
+      else curve(function (x) { return base + pred(last, x); }, "#c5cae9", 1.5);
+    }
+    curve(ens, "#3f51b5", 2.5); c.lineWidth = 1;
+    document.getElementById("nT").textContent = trees.length;
+    document.getElementById("trE").textContent = hist[hist.length - 1][0].toFixed(3);
+    document.getElementById("teE").textContent = hist[hist.length - 1][1].toFixed(3);
+    c2.clearRect(0, 0, cv2.width, cv2.height);
+    var n = Math.max(10, hist.length - 1), mx = Math.max.apply(null, hist.map(function (h) { return Math.max(h[0], h[1]); }));
+    c2.strokeStyle = "#cfd8dc"; c2.strokeRect(30, 8, cv2.width - 40, cv2.height - 26);
+    c2.fillStyle = "#78909c"; c2.font = "11px sans-serif"; c2.fillText("0", 18, cv2.height - 16); c2.fillText(String(n), cv2.width - 24, cv2.height - 4); c2.fillText(mx.toFixed(2), 0, 16);
+    [0, 1].forEach(function (k) {
+      c2.strokeStyle = k ? "#ef6c00" : "#3f51b5"; c2.lineWidth = 2; c2.beginPath();
+      hist.forEach(function (h, i) { var x = 30 + i / n * (cv2.width - 40), y = cv2.height - 18 - h[k] / mx * (cv2.height - 30); i ? c2.lineTo(x, y) : c2.moveTo(x, y); });
+      c2.stroke();
+    });
+    c2.lineWidth = 1;
+  }
+  function setMode(m) {
+    mode = m; document.getElementById("mB").className = m === "B" ? "on" : ""; document.getElementById("mG").className = m === "G" ? "on" : "";
+    document.getElementById("lrRow").style.display = m === "B" ? "" : "none"; document.getElementById("bgRow").style.display = m === "G" ? "" : "none";
+    reset();
+  }
+  document.getElementById("mB").onclick = function () { setMode("B"); };
+  document.getElementById("mG").onclick = function () { setMode("G"); };
+  document.getElementById("add1").onclick = function () { addTree(); draw(); };
+  document.getElementById("add10").onclick = function () { for (var i = 0; i < 10; i++) addTree(); draw(); };
+  document.getElementById("reset").onclick = reset;
+  document.getElementById("lr").oninput = function () { document.getElementById("lrv").textContent = (+this.value).toFixed(2); reset(); };
+  document.getElementById("dep").onchange = reset; document.getElementById("depB").onchange = reset;
+  reset();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>

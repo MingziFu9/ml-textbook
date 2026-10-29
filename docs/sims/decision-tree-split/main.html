@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>决策树生长</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+.tree ul { display:flex; justify-content:center; padding:14px 0 0; margin:0; list-style:none; position:relative; }
+.tree li { padding:14px 4px 0; position:relative; text-align:center; }
+.tree li::before, .tree li::after { content:""; position:absolute; top:0; width:50%; height:14px; border-top:1px solid var(--line); }
+.tree li::before { right:50%; } .tree li::after { left:50%; border-left:1px solid var(--line); }
+.tree li:only-child::before, .tree li:only-child::after { display:none; }
+.tree li:only-child { padding-top:0; }
+.tree li:first-child::before, .tree li:last-child::after { border:0 none; }
+.tree li:last-child::before { border-right:1px solid var(--line); }
+.tree ul ul::before { content:""; position:absolute; top:0; left:50%; height:14px; border-left:1px solid var(--line); }
+.nd { display:inline-block; border:2px solid var(--line); border-radius:8px; padding:4px 8px; font-size:12px; cursor:pointer; background:#fff; min-width:86px; }
+.nd.sel { border-color:var(--accent); box-shadow:0 0 0 2px var(--soft); }
+.nd.leafY { background:#e8f5e9; } .nd.leafN { background:#ffebee; }
+.nd .q { font-weight:600; color:var(--accent); }
+.edge { font-size:11px; color:var(--muted); display:block; }
+.wrap { overflow-x:auto; }
+td.best { background:#fff8e1; font-weight:600; }
+</style>
+</head>
+<body>
+<h1>决策树生长：自己选问题，看信息增益和基尼系数</h1>
+<div class="sub">数据是 5.2.2 节的 15 条贷款申请。点树上的一个节点选中它，再在下表中点一个特征，用它来划分这个节点。</div>
+<div class="row">
+  <button class="main" id="auto">按信息增益自动生长</button>
+  <button id="reset">重置</button>
+  <span id="info" class="note"></span>
+</div>
+<div class="box wrap"><div class="tree" id="tree"></div></div>
+<div class="box">
+  <h2 id="selTitle">选中节点的候选特征</h2>
+  <table class="t" id="cand"></table>
+  <div class="note">信息增益、增益率越大越好；划分后基尼系数越小越好。黄色是信息增益最大的特征。</div>
+</div>
+<div class="msg" id="msg"></div>
+<script>
+(function () {
+  var F = ["年龄", "有工作", "有自己的房子", "信贷情况"];
+  var D = [
+    ["青年","否","否","一般","否"],["青年","否","否","好","否"],["青年","是","否","好","是"],["青年","是","是","一般","是"],["青年","否","否","一般","否"],
+    ["中年","否","否","一般","否"],["中年","否","否","好","否"],["中年","是","是","好","是"],["中年","否","是","非常好","是"],["中年","否","是","非常好","是"],
+    ["老年","否","是","非常好","是"],["老年","否","是","好","是"],["老年","是","否","好","是"],["老年","是","否","非常好","是"],["老年","否","否","一般","否"]];
+  function cnt(ix) { var y = 0; ix.forEach(function (i) { if (D[i][4] === "是") y++; }); return [y, ix.length - y]; }
+  function H(ix) { var c = cnt(ix), n = ix.length, h = 0; c.forEach(function (k) { if (k) h -= k / n * Math.log2(k / n); }); return h; }
+  function G(ix) { var c = cnt(ix), n = ix.length; return 1 - c.reduce(function (s, k) { return s + (k / n) * (k / n); }, 0); }
+  function groups(ix, f) { var g = {}; ix.forEach(function (i) { (g[D[i][f]] = g[D[i][f]] || []).push(i); }); return g; }
+  function stats(ix, f) {
+    var g = groups(ix, f), n = ix.length, ch = 0, cg = 0, iv = 0;
+    Object.keys(g).forEach(function (v) { var w = g[v].length / n; ch += w * H(g[v]); cg += w * G(g[v]); iv -= w * Math.log2(w); });
+    var gain = H(ix) - ch;
+    return { gain: gain, ratio: iv > 0 ? gain / iv : 0, gini: cg, k: Object.keys(g).length };
+  }
+  var root, sel;
+  function mk(ix, used, edge) { return { ix: ix, used: used, edge: edge, f: null, kids: [] }; }
+  function reset() { root = mk(D.map(function (_, i) { return i; }), [], ""); sel = root; render(); }
+  function split(nd, f) {
+    var g = groups(nd.ix, f); nd.f = f;
+    nd.kids = Object.keys(g).map(function (v) { return mk(g[v], nd.used.concat([f]), v); });
+    sel = null;
+    nd.kids.some(function (k) { if (H(k.ix) > 0 && k.used.length < 4) { sel = k; return true; } });
+    if (!sel) sel = findOpen(root);
+  }
+  function findOpen(nd) {
+    if (!nd.f) return (H(nd.ix) > 0 && nd.used.length < 4) ? nd : null;
+    for (var i = 0; i < nd.kids.length; i++) { var r = findOpen(nd.kids[i]); if (r) return r; }
+    return null;
+  }
+  function depth(nd) { return nd.f ? 1 + Math.max.apply(null, nd.kids.map(depth)) : 0; }
+  function leaves(nd) { return nd.f ? nd.kids.reduce(function (s, k) { return s + leaves(k); }, 0) : 1; }
+  function nodeHtml(nd) {
+    var c = cnt(nd.ix), pure = H(nd.ix) === 0;
+    var cls = "nd" + (nd === sel ? " sel" : "") + (!nd.f && pure ? (c[0] ? " leafY" : " leafN") : "");
+    var body = (nd.f !== null ? '<div class="q">' + F[nd.f] + "？</div>" : (pure ? "<div><b>" + (c[0] ? "批准" : "不批准") + "</b></div>" : "<div>待划分</div>")) +
+      "<div>批准 " + c[0] + " / 不批准 " + c[1] + "</div><div>熵 " + H(nd.ix).toFixed(3) + " · 基尼 " + G(nd.ix).toFixed(3) + "</div>";
+    var h = "<li>" + (nd.edge ? '<span class="edge">' + nd.edge + "</span>" : "") + '<div class="' + cls + '" data-id="' + ids.length + '">' + body + "</div>";
+    ids.push(nd);
+    if (nd.kids.length) h += "<ul>" + nd.kids.map(nodeHtml).join("") + "</ul>";
+    return h + "</li>";
+  }
+  var ids;
+  function render() {
+    ids = [];
+    document.getElementById("tree").innerHTML = "<ul>" + nodeHtml(root) + "</ul>";
+    Array.prototype.forEach.call(document.querySelectorAll(".nd"), function (el) {
+      el.onclick = function () { sel = ids[+el.dataset.id]; render(); };
+    });
+    document.getElementById("info").textContent = "树的深度 " + depth(root) + " · 叶节点 " + leaves(root);
+    var t = document.getElementById("cand"), msg = document.getElementById("msg");
+    if (!sel) { t.innerHTML = ""; document.getElementById("selTitle").textContent = "选中节点的候选特征"; msg.innerHTML = '<span class="ok">所有叶节点都已经纯了，树长成了。</span>试试重置后先选“年龄”，比较树的深度和叶节点数。'; return; }
+    document.getElementById("selTitle").textContent = "选中节点（" + sel.ix.length + " 个样本，熵 " + H(sel.ix).toFixed(3) + "）的候选特征";
+    if (sel.f !== null) { t.innerHTML = ""; msg.textContent = "这个节点已经用“" + F[sel.f] + "”划分过了，点它下面还没纯的节点。"; return; }
+    if (H(sel.ix) === 0) { t.innerHTML = ""; msg.textContent = "这个节点已经全部属于同一类，是叶节点，不用再分。"; return; }
+    var rows = [], best = -1, bestG = -1;
+    F.forEach(function (name, f) { if (sel.used.indexOf(f) < 0) { var s = stats(sel.ix, f); rows.push([f, s]); if (s.gain > bestG + 1e-9) { bestG = s.gain; best = f; } } });
+    t.innerHTML = "<tr><th>特征</th><th>取值数</th><th>信息增益</th><th>信息增益率</th><th>划分后基尼</th><th></th></tr>" + rows.map(function (r) {
+      var b = r[0] === best ? ' class="best"' : "";
+      return "<tr><td" + b + ">" + F[r[0]] + "</td><td>" + r[1].k + "</td><td" + b + ">" + r[1].gain.toFixed(3) + "</td><td>" + r[1].ratio.toFixed(3) + "</td><td>" + r[1].gini.toFixed(3) + '</td><td><button data-f="' + r[0] + '">用它划分</button></td></tr>';
+    }).join("");
+    Array.prototype.forEach.call(t.querySelectorAll("button"), function (b) { b.onclick = function () { split(sel, +b.dataset.f); render(); }; });
+    msg.textContent = "";
+  }
+  document.getElementById("reset").onclick = reset;
+  document.getElementById("auto").onclick = function () {
+    var guard = 0;
+    while (sel && sel.f === null && H(sel.ix) > 0 && guard++ < 50) {
+      var best = -1, bg = -1;
+      F.forEach(function (_, f) { if (sel.used.indexOf(f) < 0) { var g = stats(sel.ix, f).gain; if (g > bg + 1e-9) { bg = g; best = f; } } });
+      split(sel, best);
+    }
+    render();
+  };
+  reset();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>

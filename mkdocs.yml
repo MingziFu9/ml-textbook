@@ -1,6 +1,6 @@
 # 新书只需改动：site_name、site_description，以及 nav（每写完一章、一个动画就加一行）
-site_name: 课程名称
-site_description: 面向成人教育人工智能技术应用专业（专科）的《课程名称》教材，每章配套动手实验
+site_name: 机器学习
+site_description: 面向成人教育人工智能技术应用专业（专科）的《机器学习》教材，12 章 36 个动手实验
 docs_dir: docs
 theme:
   name: material
@@ -35,15 +35,27 @@ extra_javascript:
 nav:
   - 首页: index.md
   - 课程描述: course-description.md
-  - "第 1 章 示例章（写正文时替换）": chapters/01-sample/index.md
+  - "第 1 章 机器学习概述与项目流程": chapters/01-intro/index.md
+  - "第 2 章 数据预处理与特征工程": chapters/02-preprocessing/index.md
+  - "第 3 章 线性回归与梯度下降": chapters/03-linear-regression/index.md
+  - "第 4 章 逻辑回归与分类模型评估": chapters/04-logistic-regression/index.md
+  - "第 5 章 决策树与集成学习": chapters/05-decision-tree/index.md
+  - "第 6 章 支持向量机": chapters/06-svm/index.md
+  - "第 7 章 K 近邻、朴素贝叶斯与关联规则": chapters/07-knn-bayes-rules/index.md
+  - "第 8 章 聚类、降维与异常检测": chapters/08-clustering/index.md
+  - "第 9 章 模型选择、调优与部署": chapters/09-model-tuning/index.md
+  - "第 10 章 神经网络基础": chapters/10-neural-network/index.md
+  - "第 11 章 卷积神经网络与循环神经网络": chapters/11-cnn-rnn/index.md
+  - "第 12 章 时间序列预测与强化学习入门": chapters/12-timeseries-rl/index.md
   - 交互动画:
     - sims/index.md
-    - "示例动画：点击计数器": sims/example-counter/index.md
+    - "决策树生长": sims/decision-tree-split/index.md
+    - "Bagging 与 Boosting": sims/bagging-boosting/index.md
   - 学习图谱: learning-graph/index.md
   - 常见问题: faq/index.md
   - 证书考点对照: certificate.md
   - 附录:
     - "附录 A Python 速查": appendix/a-python.md
     - "附录 B 工具库速查": appendix/b-libraries.md
-    - "附录 C 实验环境与数据说明": appendix/c-environment.md
+    - "附录 C 实验环境、数据与算力说明": appendix/c-environment.md
     - "附录 D 术语表": appendix/glossary.md

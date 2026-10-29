@@ -9,4 +9,5 @@ description: 本书配套的交互动画，可以在浏览器里直接操作，�
 
 | 章 | 动画 | 你可以做什么 |
 |---|---|---|
-| 第 1 章 | [示例动画：点击计数器](example-counter/index.md) | 点“加一”和“清零”，看数字和柱子的变化（模板示例，写正文时替换） |
+| 第 5 章 | [决策树生长](decision-tree-split/index.md) | 自己选每个节点的划分特征，实时查看信息增益、增益率和基尼系数 |
+| 第 5 章 | [Bagging 与 Boosting](bagging-boosting/index.md) | 一棵一棵加树，对比梯度提升的逐步纠错和随机森林式的平均 |
