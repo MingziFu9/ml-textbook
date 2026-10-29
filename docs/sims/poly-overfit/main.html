@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>多项式阶数与过拟合</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+canvas { width:100%; height:auto; border:1px solid var(--line); border-radius:6px; background:#fff; }
+.kpi { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px; }
+.kpi div { border:1px solid var(--line); border-radius:6px; padding:4px 8px; font-size:12px; }
+.kpi b { display:block; font-size:16px; }
+.lg span { display:inline-block; margin-right:12px; font-size:12px; }
+.dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:4px; vertical-align:0; }
+</style>
+</head>
+<body>
+<h1>多项式阶数与过拟合：拖动阶数和正则化强度，看训练误差和测试误差</h1>
+<div class="sub">数据与实验 3-3 相同：奶茶店 20 天的训练数据（黑点）和 200 天的测试数据（灰点），横轴是气温，纵轴是日销量。曲线是用训练数据拟合出的多项式。</div>
+<div class="row"><span>多项式阶数</span><input type="range" id="deg" min="1" max="15" step="1" value="2" aria-label="多项式阶数"><b id="degv"></b></div>
+<div class="row"><span>岭回归 alpha</span><input type="range" id="alpha" min="0" max="6" step="1" value="0" aria-label="正则化强度"><b id="alphav"></b></div>
+<div class="row ex"><span class="lbl">试一试：</span><button data-d="1" data-a="0">1 阶</button><button data-d="2" data-a="0">2 阶</button><button data-d="9" data-a="0">9 阶</button><button data-d="15" data-a="0">15 阶</button><button data-d="15" data-a="4">15 阶 + alpha=1</button><button data-d="15" data-a="5">15 阶 + alpha=10</button></div>
+<canvas id="cv" width="760" height="380"></canvas>
+<div class="lg"><span><i class="dot" style="background:#263238"></i>训练数据</span><span><i class="dot" style="background:#b0bec5"></i>测试数据</span><span><i class="dot" style="background:#e53935"></i>拟合曲线</span><span><i class="dot" style="background:#43a047"></i>真实规律</span></div>
+<div class="kpi"><div>训练 MSE<b id="tr"></b></div><div>测试 MSE<b id="te"></b></div><div>系数绝对值之和<b id="cs"></b></div></div>
+<div class="msg" id="msg"></div>
+<div class="note">计算方法与实验 3-3 相同：气温缩放到 [−1, 1]，生成 1～阶数次方，标准化后用岭回归求解（alpha = 0 即普通线性回归）。随机波动的方差是 400，测试 MSE 降到 500 左右就已经接近极限。</div>
+<script>
+(function () {
+  var D = {"train": [[7.83, 179.0], [8.11, 180.4], [8.75, 173.0], [10.27, 198.4], [12.81, 178.2], [14.38, 228.0], [14.66, 209.0], [17.91, 273.2], [19.21, 282.1], [19.29, 218.1], [20.81, 266.0], [22.05, 264.8], [24.21, 252.4], [24.36, 284.3], [26.4, 268.2], [27.98, 243.8], [29.24, 274.6], [29.35, 277.0], [31.44, 281.7], [36.56, 246.8]], "test": [[7.86, 194.3], [7.87, 196.8], [8.08, 161.0], [8.39, 173.4], [8.6, 186.8], [8.7, 177.9], [9.32, 229.3], [9.35, 198.9], [9.38, 174.8], [9.67, 181.6], [10.06, 199.3], [10.27, 248.0], [10.36, 199.3], [10.44, 206.0], [10.51, 214.3], [10.77, 205.2], [10.83, 252.1], [11.14, 198.2], [11.43, 225.9], [11.45, 214.4], [11.47, 223.7], [11.72, 189.7], [11.95, 250.2], [12.03, 213.0], [12.05, 216.3], [12.42, 199.5], [12.68, 205.4], [12.68, 231.3], [12.82, 240.7], [13.01, 237.3], [13.39, 249.0], [13.48, 239.7], [13.49, 226.1], [13.52, 242.4], [13.72, 238.9], [13.74, 225.1], [13.78, 241.9], [13.97, 254.3], [13.97, 233.3], [14.11, 222.4], [14.29, 245.0], [14.63, 270.8], [14.83, 229.8], [15.12, 233.9], [15.35, 234.3], [15.44, 262.1], [15.59, 201.7], [15.74, 246.6], [15.87, 263.9], [16.22, 225.7], [16.35, 272.5], [16.39, 253.7], [16.4, 232.0], [16.68, 248.6], [16.85, 214.7], [16.96, 234.7], [17.13, 283.4], [17.39, 230.3], [17.59, 286.1], [17.61, 247.6], [17.67, 269.5], [17.83, 251.2], [17.85, 205.6], [18.07, 240.1], [18.41, 256.9], [18.44, 230.2], [18.51, 226.7], [18.58, 261.2], [18.76, 241.7], [18.81, 221.0], [18.99, 242.1], [19.03, 273.1], [19.06, 246.6], [19.12, 275.0], [19.14, 286.9], [19.14, 257.1], [19.31, 234.5], [19.35, 231.3], [19.45, 257.2], [19.47, 275.4], [19.75, 264.4], [19.77, 270.0], [20.14, 251.7], [20.54, 268.1], [20.57, 252.8], [21.37, 258.6], [21.61, 240.1], [21.62, 234.5], [21.64, 256.4], [21.64, 243.9], [21.67, 247.0], [21.99, 280.6], [22.05, 265.2], [22.05, 325.7], [22.55, 287.4], [22.66, 256.6], [22.85, 285.3], [22.99, 277.3], [23.23, 257.1], [23.24, 292.9], [23.25, 255.4], [23.26, 209.8], [23.29, 286.9], [23.48, 259.2], [23.53, 301.4], [23.55, 258.7], [23.76, 248.6], [23.94, 303.6], [23.97, 251.2], [23.99, 276.8], [24.0, 301.8], [24.06, 275.2], [24.12, 271.5], [24.25, 275.4], [24.56, 290.9], [24.64, 258.1], [24.73, 286.7], [24.77, 286.1], [25.26, 322.2], [25.44, 269.1], [25.5, 257.6], [25.6, 290.8], [25.75, 268.4], [25.93, 282.5], [26.21, 279.8], [26.31, 300.7], [26.72, 264.7], [26.8, 276.1], [26.9, 227.0], [26.94, 260.3], [26.97, 308.9], [27.02, 264.6], [27.05, 264.2], [27.05, 253.9], [27.06, 289.9], [27.06, 281.8], [27.36, 254.9], [27.44, 292.0], [27.47, 283.9], [27.54, 293.9], [27.89, 266.3], [28.05, 314.0], [28.11, 287.5], [28.13, 277.0], [28.14, 268.9], [28.17, 274.4], [28.48, 296.7], [28.57, 274.2], [29.12, 301.4], [29.14, 291.5], [29.2, 306.8], [29.2, 296.2], [29.28, 278.6], [29.44, 241.8], [29.62, 285.9], [29.81, 295.8], [29.89, 283.3], [29.92, 291.1], [30.04, 270.6], [30.07, 272.4], [30.35, 261.1], [30.41, 307.2], [30.44, 283.1], [30.52, 270.1], [31.19, 253.1], [31.39, 276.5], [31.39, 308.5], [31.67, 288.7], [32.02, 264.7], [32.17, 307.6], [32.23, 307.6], [32.24, 298.6], [32.27, 294.7], [32.47, 301.9], [32.5, 289.6], [32.72, 294.0], [32.85, 262.8], [32.9, 308.3], [33.0, 282.8], [33.01, 318.7], [33.07, 237.3], [33.14, 292.1], [33.24, 297.5], [33.45, 270.8], [33.51, 286.6], [33.96, 291.8], [34.29, 287.9], [34.3, 265.5], [34.59, 273.0], [34.6, 296.2], [34.74, 301.0], [34.76, 277.4], [35.04, 276.5], [35.48, 278.0], [35.53, 294.6], [35.55, 252.8], [35.56, 247.2], [35.71, 276.0], [35.79, 251.2], [36.55, 259.7]]};
+  var ALPHAS = [0, 0.001, 0.01, 0.1, 1, 10, 100];
+  var tmin = Math.min.apply(null, D.train.map(function (p) { return p[0]; }));
+  var tmax = Math.max.apply(null, D.train.map(function (p) { return p[0]; }));
+  function sx(t) { return -1 + 2 * (t - tmin) / (tmax - tmin); }
+  function feats(t, d) { var x = sx(t), r = [], v = 1; for (var k = 1; k <= d; k++) { v *= x; r.push(v); } return r; }
+  var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  var W = cv.width, H = cv.height, L = 46, R = 10, T = 10, B = 34;
+  function X(t) { return L + (t - 5) / 35 * (W - L - R); } function Y(v) { return H - B - v / 450 * (H - T - B); }
+  function mse(f, pts) { var s = 0; pts.forEach(function (p) { var e = f(p[0]) - p[1]; s += e * e; }); return s / pts.length; }
+  function render() {
+    var d = +document.getElementById("deg").value, ai = +document.getElementById("alpha").value, a = ALPHAS[ai];
+    document.getElementById("degv").textContent = d + " 阶"; document.getElementById("alphav").textContent = a;
+    var res = fit(d, a);
+    var f = res.f, w = res.w;
+    ctx.clearRect(0, 0, W, H); ctx.font = "12px sans-serif"; ctx.fillStyle = "#78909c"; ctx.strokeStyle = "#eceff1";
+    for (var v = 0; v <= 450; v += 50) { ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(W - R, Y(v)); ctx.stroke(); ctx.fillText(v, 8, Y(v) + 4); }
+    for (var t = 5; t <= 40; t += 5) ctx.fillText(t + "℃", X(t) - 10, H - 12);
+    D.test.forEach(function (p) { ctx.fillStyle = "#b0bec5"; ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 2.2, 0, 7); ctx.fill(); });
+    ctx.strokeStyle = "#43a047"; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]); ctx.beginPath();
+    for (var t2 = tmin; t2 <= tmax; t2 += 0.1) { var yv = 100 + 12 * t2 - 0.2 * t2 * t2; t2 === tmin ? ctx.moveTo(X(t2), Y(yv)) : ctx.lineTo(X(t2), Y(yv)); }
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.save(); ctx.beginPath(); ctx.rect(L, T, W - L - R, H - T - B); ctx.clip();
+    ctx.strokeStyle = "#e53935"; ctx.lineWidth = 2; ctx.beginPath();
+    for (var i = 0; i <= 400; i++) { var tt = tmin + (tmax - tmin) * i / 400, yy = Math.max(-100, Math.min(600, f(tt))); i ? ctx.lineTo(X(tt), Y(yy)) : ctx.moveTo(X(tt), Y(yy)); }
+    ctx.stroke(); ctx.restore();
+    D.train.forEach(function (p) { ctx.fillStyle = "#263238"; ctx.beginPath(); ctx.arc(X(p[0]), Y(p[1]), 4, 0, 7); ctx.fill(); });
+    var tr = mse(f, D.train), te = mse(f, D.test), cs = w.reduce(function (s, x) { return s + Math.abs(x); }, 0);
+    document.getElementById("tr").textContent = tr.toFixed(1);
+    document.getElementById("te").textContent = te < 1e5 ? te.toFixed(1) : te.toExponential(2);
+    document.getElementById("cs").textContent = cs < 1e5 ? cs.toFixed(1) : cs.toExponential(2);
+    var m;
+    if (te > 5000) m = '<span class="bad">过拟合：曲线为了穿过每个训练点而剧烈摆动，训练误差很小，测试误差暴涨。</span>';
+    else if (d === 1) m = "欠拟合：一条直线表达不了“先升后降”，训练误差和测试误差都偏大。";
+    else if (te - tr > 250) m = "训练误差和测试误差的差距在拉大，开始有过拟合的迹象。";
+    else m = '<span class="ok">训练误差和测试误差都比较小、差距不大，泛化得不错。</span>';
+    if (a > 0 && d >= 10) m += " 正则化压低了系数（看第三个数），曲线变得平滑。";
+    document.getElementById("msg").innerHTML = m;
+  }
+  function fit(d, alpha) {
+    var X0 = D.train.map(function (p) { return feats(p[0], d); }), y = D.train.map(function (p) { return p[1]; }), n = X0.length;
+    var mu = [], sd = [];
+    for (var j = 0; j < d; j++) {
+      var m = 0; X0.forEach(function (r) { m += r[j]; }); m /= n;
+      var s = 0; X0.forEach(function (r) { s += (r[j] - m) * (r[j] - m); }); s = Math.sqrt(s / n) || 1;
+      mu.push(m); sd.push(s);
+    }
+    var Z = X0.map(function (r) { return r.map(function (v, j) { return (v - mu[j]) / sd[j]; }); });
+    var ym = y.reduce(function (a, b) { return a + b; }, 0) / n;
+    var A = [], bb = [];
+    for (var i = 0; i < d; i++) {
+      A.push([]); var s2 = 0;
+      for (var k = 0; k < d; k++) { var s1 = 0; for (var r = 0; r < n; r++) s1 += Z[r][i] * Z[r][k]; A[i].push(s1 + (i === k ? Math.max(alpha, 1e-9) : 0)); }
+      for (var r2 = 0; r2 < n; r2++) s2 += Z[r2][i] * (y[r2] - ym);
+      bb.push(s2);
+    }
+    for (var c = 0; c < d; c++) {
+      var p = c; for (var r3 = c + 1; r3 < d; r3++) if (Math.abs(A[r3][c]) > Math.abs(A[p][c])) p = r3;
+      var tmp = A[c]; A[c] = A[p]; A[p] = tmp; var tb = bb[c]; bb[c] = bb[p]; bb[p] = tb;
+      for (var r4 = c + 1; r4 < d; r4++) { var f = A[r4][c] / A[c][c]; for (var k2 = c; k2 < d; k2++) A[r4][k2] -= f * A[c][k2]; bb[r4] -= f * bb[c]; }
+    }
+    var w = new Array(d);
+    for (var i2 = d - 1; i2 >= 0; i2--) { var s3 = bb[i2]; for (var k3 = i2 + 1; k3 < d; k3++) s3 -= A[i2][k3] * w[k3]; w[i2] = s3 / A[i2][i2]; }
+    return { w: w, f: function (t) { var f2 = feats(t, d), v2 = ym; for (var j2 = 0; j2 < d; j2++) v2 += w[j2] * (f2[j2] - mu[j2]) / sd[j2]; return v2; } };
+  }
+  document.getElementById("deg").oninput = render; document.getElementById("alpha").oninput = render;
+  document.querySelectorAll("[data-d]").forEach(function (b) { b.onclick = function () { document.getElementById("deg").value = b.dataset.d; document.getElementById("alpha").value = b.dataset.a; render(); }; });
+  render();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>
