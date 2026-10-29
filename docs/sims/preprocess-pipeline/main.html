@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>预处理流水线</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+.steps { display:flex; flex-wrap:wrap; gap:6px; }
+.steps label { border:1px solid var(--line); border-radius:14px; padding:2px 10px; font-size:13px; cursor:pointer; user-select:none; }
+.steps label.on { background:var(--soft); border-color:var(--accent); color:var(--accent); }
+.steps input { margin-right:4px; vertical-align:-1px; }
+.wrap { overflow-x:auto; }
+table.t td.chg { background:#fff8e1; font-weight:600; }
+table.t td.bad { background:#ffebee; color:var(--neg); }
+table.t td.na { color:var(--muted); font-style:italic; }
+table.t tr.del td { text-decoration:line-through; color:var(--muted); background:#fafafa; }
+table.t td, table.t th { white-space:nowrap; }
+</style>
+</head>
+<body>
+<h1>预处理流水线：一步步打开清洗和编码，看数据表怎样变化</h1>
+<div class="sub">8 行取自实验 2-1 的二手房原始数据。红色是有问题的格子，黄色是这一步改过的格子。按顺序勾选，也可以只勾某几步，看看漏掉一步会怎样。</div>
+<div class="steps" id="steps"></div>
+<div class="row"><button id="all">全部打开</button><button id="none">全部关闭</button><span class="note" id="cnt" style="margin:0"></span></div>
+<div class="box wrap"><table class="t" id="tbl"></table></div>
+<div class="msg" id="msg"></div>
+<div class="note">填充值和标准化参数取自实验 2-2 的训练集：海珠区建成年份中位数 2004、距地铁站中位数 720 米；面积均值 92.24、标准差 30.54，建成年份均值 2007.14、标准差 7.42，距地铁站均值 985.53、标准差 880.71。</div>
+<script>
+(function () {
+  var RAW = [
+    ["GZ302237", "海珠", "63.5㎡", "简装", null, 280, 30614, 194.4],
+    ["GZ300108", "天河", "57.9平米", "精装", 2002, 1990, 57617, 333.6],
+    ["GZ300956", "南沙", "131.2", "毛坯", 2021, 860, 15838, 2078000.0],
+    ["GZ301091", "白云", "889.0", "精装", 2000, 1210, 35861, 318.8],
+    ["GZ301898", "海珠", "141.9", "精装修", 2008, 560, 49979, 709.2],
+    ["GZ302601", "番禺", "42.2", "精装", 2018, null, 20095, 84.8],
+    ["GZ300982", "黄埔", "70.8", null, 2004, 1080, 27359, 193.7],
+    ["GZ302237", "海珠", "63.5㎡", "简装", null, 280, 30614, 194.4]
+  ];
+  var YEAR_MED = { "海珠": 2004 }, SUB_MED = 720;
+  var SC = { area: [92.24, 30.54], year: [2007.14, 7.42], sub: [985.53, 880.71] };
+  var STEPS = [
+    ["dup", "① 去重", "同一房源编号只保留第一条：最后一行和第一行完全相同，被删掉。"],
+    ["unit", "② 面积去单位", "“63.5㎡”“57.9平米”去掉单位才能当数字计算。"],
+    ["fix", "③ 修正录入错误", "总价 2078000 是按“元”录的，除以 10000；面积 889.0 多打了一个 0，除以 10。依据：单价 × 面积 应约等于总价。"],
+    ["deco", "④ 统一装修写法", "“精装修”改成“精装”；缺失的装修记为“未知”，作为单独一类保留。"],
+    ["fill", "⑤ 填充缺失值", "建成年份用同区中位数，距地铁站用整体中位数，都从训练集计算。"],
+    ["drop", "⑥ 删除泄露字段", "单价由总价算出，预测总价时不能用，删掉。"],
+    ["onehot", "⑦ 独热编码", "装修有 4 个取值，变成 4 列 0/1。区域同理，这里为了版面只演示装修。"],
+    ["scale", "⑧ 标准化", "面积、建成年份、距地铁站减去均值、除以标准差，变成均值 0、标准差 1 附近的数。"]
+  ];
+  var on = {};
+  var box = document.getElementById("steps");
+  STEPS.forEach(function (s) {
+    var l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox" data-k="' + s[0] + '">' + s[1];
+    l.querySelector("input").onchange = function (e) { on[s[0]] = e.target.checked; render(); };
+    box.appendChild(l);
+  });
+  function setAll(v) { document.querySelectorAll("#steps input").forEach(function (c) { c.checked = v; on[c.dataset.k] = v; }); render(); }
+  document.getElementById("all").onclick = function () { setAll(true); };
+  document.getElementById("none").onclick = function () { setAll(false); };
+  function fmt(v, d) { return typeof v === "number" ? (d === undefined ? String(v) : v.toFixed(d)) : v; }
+  function render() {
+    document.querySelectorAll("#steps label").forEach(function (l) { l.className = l.querySelector("input").checked ? "on" : ""; });
+    var cols = ["房源编号", "区域", "面积", "装修", "建成年份", "距地铁站_米", "单价", "总价_万元"];
+    var rows = RAW.map(function (r, i) {
+      var v = r.slice(), c = {}, bad = {};
+      // 标出问题格子
+      if (typeof v[2] === "string" && /[㎡平米]/.test(v[2])) bad[2] = 1;
+      if (parseFloat(v[2]) > 300) bad[2] = 1;
+      if (v[7] > 10000) bad[7] = 1;
+      if (v[3] === "精装修" || v[3] === null) bad[3] = 1;
+      if (v[4] === null) bad[4] = 1;
+      if (v[5] === null) bad[5] = 1;
+      var del = on.dup && i === 7;
+      if (on.unit || on.fix || on.scale) { if (bad[2] && /[㎡平米]/.test(v[2])) { c[2] = 1; delete bad[2]; } v[2] = parseFloat(v[2]); }
+      if (on.fix) {
+        if (v[7] > 10000) { v[7] = v[7] / 10000; c[7] = 1; delete bad[7]; }
+        if (v[2] > 300) { v[2] = v[2] / 10; c[2] = 1; delete bad[2]; }
+      }
+      if (on.deco) { if (v[3] === "精装修") { v[3] = "精装"; c[3] = 1; delete bad[3]; } if (v[3] === null) { v[3] = "未知"; c[3] = 1; delete bad[3]; } }
+      if (on.fill) {
+        if (v[4] === null) { v[4] = YEAR_MED[v[1]]; c[4] = 1; delete bad[4]; }
+        if (v[5] === null) { v[5] = SUB_MED; c[5] = 1; delete bad[5]; }
+      }
+      if (on.scale) {
+        if (typeof v[2] === "number") { v[2] = (v[2] - SC.area[0]) / SC.area[1]; c[2] = 1; }
+        if (v[4] !== null) { v[4] = (v[4] - SC.year[0]) / SC.year[1]; c[4] = 1; }
+        if (v[5] !== null) { v[5] = (v[5] - SC.sub[0]) / SC.sub[1]; c[5] = 1; }
+      }
+      return { v: v, c: c, bad: bad, del: del };
+    });
+    var head = cols.slice(), DECO = ["精装", "简装", "毛坯", "未知"];
+    if (on.drop) head.splice(6, 1);
+    if (on.onehot) { var k = head.indexOf("装修"); head.splice(k, 1, "装修_精装", "装修_简装", "装修_毛坯", "装修_未知"); }
+    var html = "<tr>" + head.map(function (h) { return "<th>" + h + "</th>"; }).join("") + "</tr>";
+    rows.forEach(function (r) {
+      var cells = [];
+      r.v.forEach(function (x, j) {
+        if (on.drop && j === 6) return;
+        var cls = r.bad[j] ? "bad" : (r.c[j] ? "chg" : "");
+        if (j === 3 && on.onehot) {
+          DECO.forEach(function (d) { cells.push('<td class="chg">' + (x === d ? 1 : 0) + (x === "精装修" && d === "精装" ? "？" : "") + "</td>"); });
+          return;
+        }
+        var txt = x === null ? "缺失" : (on.scale && (j === 2 || j === 4 || j === 5) && typeof x === "number" ? x.toFixed(2) : fmt(x));
+        if (x === null) cls += " na";
+        cells.push('<td class="' + cls + '">' + txt + "</td>");
+      });
+      html += '<tr class="' + (r.del ? "del" : "") + '">' + cells.join("") + "</tr>";
+    });
+    document.getElementById("tbl").innerHTML = html;
+    var badN = rows.reduce(function (s, r) { return s + (r.del ? 0 : Object.keys(r.bad).length); }, 0);
+    var n = STEPS.filter(function (s) { return on[s[0]]; }).length;
+    document.getElementById("cnt").textContent = "已打开 " + n + " / 8 步，还有 " + badN + " 个问题格子" + (on.dup ? "" : "，另有 1 行重复");
+    var last = STEPS.filter(function (s) { return on[s[0]]; }).pop();
+    var warn = "";
+    if (on.onehot && !on.deco) warn = " 注意：没有先统一写法就做独热编码，“精装修”既不是“精装”也不是“简装”，会被漏掉或单独成一列。";
+    if (on.scale && !on.fix) warn = " 注意：没有先修正 889 平方米的录入错误就标准化，这一行的面积变成了极端值。";
+    if (on.scale && !on.fill) warn += " 缺失值没填，标准化后仍是缺失，模型无法训练。";
+    document.getElementById("msg").innerHTML = (last ? "<b>" + last[1] + "</b>：" + last[2] : "原始数据：先找出红色格子都是什么问题。") + '<span class="bad">' + warn + "</span>";
+  }
+  render();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>

@@ -49,6 +49,8 @@ nav:
   - "第 12 章 时间序列预测与强化学习入门": chapters/12-timeseries-rl/index.md
   - 交互动画:
     - sims/index.md
+    - "三种学习范式分一分": sims/ml-paradigms/index.md
+    - "预处理流水线": sims/preprocess-pipeline/index.md
     - "Bagging 与 Boosting": sims/bagging-boosting/index.md
     - "决策树生长": sims/decision-tree-split/index.md
   - 学习图谱: learning-graph/index.md
