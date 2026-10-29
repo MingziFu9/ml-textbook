@@ -196,16 +196,16 @@ def make_fraud(n=20000, seed=SEED + 3):
         out[fraud] = bad(k)
         return out
 
-    amount = np.round(mix(lambda m: rng.lognormal(np.log(120), 1.0, m), lambda m: rng.lognormal(np.log(900), 1.1, m)), 2)
+    amount = np.round(mix(lambda m: rng.lognormal(np.log(120), 1.0, m), lambda m: rng.lognormal(np.log(380), 1.1, m)), 2)
     hour = mix(lambda m: np.clip(np.round(rng.normal(14, 4.5, m)), 0, 23),
-               lambda m: np.where(rng.random(m) < 0.45, rng.integers(0, 6, m), rng.integers(0, 24, m))).astype(int)
-    abroad = mix(lambda m: (rng.random(m) < 0.03).astype(float), lambda m: (rng.random(m) < 0.25).astype(float)).astype(int)
-    new_device = mix(lambda m: (rng.random(m) < 0.06).astype(float), lambda m: (rng.random(m) < 0.40).astype(float)).astype(int)
-    gap = np.round(mix(lambda m: rng.exponential(30, m), lambda m: rng.exponential(4, m)), 1)
-    cnt24 = mix(lambda m: rng.poisson(2, m).astype(float), lambda m: rng.poisson(5, m).astype(float)).astype(int)
-    dist = np.round(mix(lambda m: rng.exponential(6, m), lambda m: rng.exponential(120, m)), 1)
+               lambda m: np.where(rng.random(m) < 0.3, rng.integers(0, 6, m), rng.integers(0, 24, m))).astype(int)
+    abroad = mix(lambda m: (rng.random(m) < 0.03).astype(float), lambda m: (rng.random(m) < 0.12).astype(float)).astype(int)
+    new_device = mix(lambda m: (rng.random(m) < 0.06).astype(float), lambda m: (rng.random(m) < 0.22).astype(float)).astype(int)
+    gap = np.round(mix(lambda m: rng.exponential(30, m), lambda m: rng.exponential(12, m)), 1)
+    cnt24 = mix(lambda m: rng.poisson(2, m).astype(float), lambda m: rng.poisson(3, m).astype(float)).astype(int)
+    dist = np.round(mix(lambda m: rng.exponential(6, m), lambda m: rng.exponential(18, m)), 1)
     cats = np.array(["超市", "餐饮", "网购", "加油", "数码电器", "珠宝首饰", "游戏充值"])
-    merchant = np.where(fraud, rng.choice(cats, n, p=[0.08, 0.07, 0.30, 0.05, 0.22, 0.13, 0.15]),
+    merchant = np.where(fraud, rng.choice(cats, n, p=[0.15, 0.15, 0.30, 0.08, 0.14, 0.08, 0.10]),
                         rng.choice(cats, n, p=[0.28, 0.27, 0.25, 0.10, 0.05, 0.02, 0.03]))
     return pd.DataFrame({
         "交易编号": [f"T{1000000 + i}" for i in range(n)],
