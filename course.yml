@@ -32,7 +32,7 @@ certificates:                         # 对应的职业证书；没有证书的�
     issuer: 工业和信息化部教育与考试中心（未找到官方考纲，依据培训机构转述）
 
 # 章节：dir 是 docs/chapters/ 下的文件夹名（两位章号开头），short 用于学习图谱等窄处
-# theory / lab 是本章学时；labs 可单独覆盖本章实验数
+# theory / lab 是本章学时；labs 可单独覆盖本章实验数；offline 可指定本章线下学时（不写则按 online_ratio 分）
 chapters:
   - {dir: 01-intro, title: "机器学习概述与项目流程", short: "概述与流程", theory: 4, lab: 2}
   - {dir: 02-preprocessing, title: "数据预处理与特征工程", short: "预处理与特征工程", theory: 5, lab: 3}
@@ -46,6 +46,9 @@ chapters:
   - {dir: 10-neural-network, title: "神经网络基础", short: "神经网络", theory: 5, lab: 2}
   - {dir: 11-cnn-rnn, title: "卷积神经网络与循环神经网络", short: "CNN 与 RNN", theory: 5, lab: 3}
   - {dir: 12-timeseries-rl, title: "时间序列预测与强化学习入门", short: "时序与强化学习", theory: 5, lab: 2}
+
+# 其他页面：追加在导航“常见问题”之后，如 extra_pages: [{file: mock-exam.md, title: 在线模拟卷}]
+extra_pages: []
 
 # 附录：docs/appendix/ 下的文件，按顺序自动编号为 A、B、C……（术语表固定为 glossary.md）
 appendices:
