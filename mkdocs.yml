@@ -53,6 +53,7 @@ nav:
     - "预处理流水线": sims/preprocess-pipeline/index.md
     - "梯度下降下山": sims/gradient-descent/index.md
     - "多项式阶数与过拟合": sims/poly-overfit/index.md
+    - "阈值、混淆矩阵与 ROC": sims/threshold-roc/index.md
     - "Bagging 与 Boosting": sims/bagging-boosting/index.md
     - "决策树生长": sims/decision-tree-split/index.md
   - 学习图谱: learning-graph/index.md

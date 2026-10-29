@@ -109,6 +109,32 @@ description: 本书主要术语的中英文名称、简明定义和例子，按�
 
 | 术语 | 英文 | 定义 | 例子 |
 |---|---|---|---|
+| <span id="g-二分类"></span>二分类 | Binary Classification | 只有两个类别的分类任务 | 客户流失 / 不流失，肿瘤恶性 / 良性 |
+| <span id="g-正类"></span>正类 | Positive Class | 二分类中要找出来、记为 1 的那一类，通常是少数、“出了问题”的一类 | 流失客户、恶性肿瘤、欺诈交易 |
+| <span id="g-多分类"></span>多分类 | Multi-class Classification | 有三个及以上类别的分类任务 | 识别手写数字是 0～9 中的哪一个 |
+| <span id="g-逻辑回归"></span>逻辑回归 | Logistic Regression | 给每个特征一个权重、加权求和后用 Sigmoid 函数输出类别概率的分类模型 | 电信客户流失模型测试集 AUC 为 0.836 |
+| <span id="g-Sigmoid-函数"></span>Sigmoid 函数 | Sigmoid Function | 把任意实数压缩到 0 到 1 之间的 S 形函数 σ(z) = 1 / (1 + e⁻ᶻ) | σ(0) = 0.5，σ(2) ≈ 0.881，σ(−2) ≈ 0.119 |
+| <span id="g-概率输出"></span>概率输出 | Probability Output | 分类模型给出的样本属于某一类的概率，而不只是类别 | 客户 C101053 的流失概率为 0.449 |
+| <span id="g-分类阈值"></span>分类阈值 | Classification Threshold | 把概率转换成类别时使用的分界值 | 恶性概率大于等于 0.3 判为恶性，漏诊 3 例 |
+| <span id="g-决策边界"></span>决策边界 | Decision Boundary | 分类模型把不同类别分开的分界线（面）；逻辑回归中是 z = 0 的直线或平面 | 两个特征时，直线一侧判为流失、另一侧判为不流失 |
+| <span id="g-交叉熵"></span>交叉熵 | Cross-Entropy | 分类任务常用的损失函数，等于正确类别预测概率的负对数 | 正确类别概率 0.9 时损失约 0.105，0.1 时约 2.303 |
+| <span id="g-几率"></span>几率 | Odds | 事件发生的概率与不发生的概率之比；逻辑回归中特征加 1，几率变为 e^w 倍 | 流失概率 0.75 时几率为 3；签两年合约使流失几率降为 0.47 倍 |
+| <span id="g-Softmax"></span>Softmax | Softmax | 把一组得分转换为和为 1 的概率分布的函数 | 得分 2.0、1.0、0.1 → 概率 0.66、0.24、0.10 |
+| <span id="g-混淆矩阵"></span>混淆矩阵 | Confusion Matrix | 按“实际类别 × 预测类别”交叉统计样本数量的表格 | 流失模型 TP = 264，FN = 191，FP = 147，TN = 898 |
+| <span id="g-准确率"></span>准确率 | Accuracy | 预测正确的样本占全部样本的比例 | 1500 个客户中判对 1162 个，准确率约 0.775 |
+| <span id="g-精确率"></span>精确率 | Precision | 预测为某类的样本中，真正属于该类的比例（判得准不准） | 判为流失的 411 人中，264 人真的流失，精确率 0.642 |
+| <span id="g-召回率"></span>召回率 | Recall | 某类的全部样本中，被正确找出来的比例（找得全不全） | 455 个流失客户中找出 264 个，召回率 0.580 |
+| <span id="g-F1-值"></span>F1 值 | F1 Score | 精确率与召回率的调和平均数，综合衡量两者 | 精确率 0.642、召回率 0.580 时 F1 约 0.610 |
+| <span id="g-假阳性率"></span>假阳性率 | False Positive Rate, FPR | 实际为负类的样本中被误判为正类的比例，是 ROC 曲线的横轴 | 107 例良性中误诊 9 例，假阳性率 0.084 |
+| <span id="g-ROC-曲线"></span>ROC 曲线 | Receiver Operating Characteristic Curve | 以假阳性率为横轴、真阳性率（召回率）为纵轴，把所有阈值的结果连成的曲线 | 好的模型曲线迅速升到左上角 |
+| <span id="g-AUC"></span>AUC | Area Under the ROC Curve | ROC 曲线下的面积，等于随机正类样本得分高于随机负类样本的概率，0.5 为乱猜、1 为完美 | 乳腺肿瘤 5 个特征模型 AUC 0.980，30 个特征 0.998 |
+| <span id="g-PR-曲线"></span>PR 曲线 | Precision-Recall Curve | 以召回率为横轴、精确率为纵轴的曲线，正类很少时比 ROC 更能说明问题 | 欺诈模型 AUC 0.962，PR 曲线下面积（AP）只有 0.487 |
+| <span id="g-类别不平衡"></span>类别不平衡 | Class Imbalance | 各类别样本数量相差很大的情况 | 2 万笔交易中欺诈只占 1.04% |
+| <span id="g-类别权重"></span>类别权重 | Class Weight | 在损失函数中给少数类样本更大权重的不平衡处理方法 | `class_weight="balanced"` 让召回率从 0.270 升到 0.841 |
+| <span id="g-过采样与欠采样"></span>过采样与欠采样 | Oversampling and Undersampling | 增加少数类或减少多数类训练样本，使各类数量接近的方法，只能用于训练集 | 随机欠采样后召回率 0.873，误报 813 笔 |
+| <span id="g-SMOTE"></span>SMOTE | Synthetic Minority Over-sampling Technique | 在少数类样本与其近邻之间插值、合成新样本的过采样方法 | SMOTE 过采样后召回率 0.841，误报 638 笔 |
+| <span id="g-错误案例分析"></span>错误案例分析 | Error Analysis | 逐条查看模型判错的样本，归纳出错原因并提出改进建议的方法 | 漏判的欺诈多为小额、无设备变化的交易 |
+| <span id="g-模型测试报告"></span>模型测试报告 | Model Test Report | 说明测试目的、数据、指标、结果、错误分析和结论建议，作为模型能否上线依据的文档 | 信用卡欺诈模型测试报告推荐类别权重 + 阈值 0.8 |
 
 ## 第 5 章 决策树与集成学习
 
