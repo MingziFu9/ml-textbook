@@ -1,7 +1,7 @@
 // 学习图谱数据：由编者整理，概念与定义取自附录 D 术语表
 // 改完后运行 python tools/graph_text.py，检查数据并更新 index.md 里的文字版
 var CATS = ["树模型", "集成学习"];
-var CHAPTERS = ["", "机器学习概述与项目流程", "数据预处理与特征工程", "线性回归与梯度下降", "逻辑回归与分类模型评估", "决策树与集成学习", "支持向量机", "K 近邻、朴素贝叶斯与关联规则", "聚类、降维与异常检测", "模型选择、调优与部署", "神经网络基础", "卷积神经网络与循环神经网络", "时间序列预测与强化学习入门"];
+var CHAPTERS = ["", "概述与流程", "预处理与特征工程", "线性回归", "逻辑回归与评估", "决策树与集成", "支持向量机", "KNN、贝叶斯与关联规则", "聚类与降维", "调优与部署", "神经网络", "CNN 与 RNN", "时序与强化学习"];
 var CHDIRS = ["", "01-intro", "02-preprocessing", "03-linear-regression", "04-logistic-regression", "05-decision-tree", "06-svm", "07-knn-bayes-rules", "08-clustering", "09-model-tuning", "10-neural-network", "11-cnn-rnn", "12-timeseries-rl"];
 var NODES = [
   {"id": "决策树", "ch": 5, "cat": 0, "a": "g-决策树", "d": "用一连串只看一个特征的是 / 否问题对样本逐步划分，在叶节点给出结论的模型"},

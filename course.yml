@@ -1,0 +1,61 @@
+# ============================================================
+# 课程配置：全书唯一需要手改的配置文件
+# 改完后运行  python tools/course.py sync  ，会自动更新：
+#   mkdocs.yml 的站点名和导航、首页课程信息与目录、缺少的章节骨架、
+#   实验目录、术语表的章节小节、学习图谱的章节列表、附录编号
+# 课件（tools/make_slides.py）、教案（tools/make_lesson_plan.py）、Word/PDF 版（tools/export_docx.py）
+# 也从这里读取课程名、学时等信息
+# ============================================================
+
+title: 机器学习                      # 书名
+description: 面向成人教育人工智能技术应用专业（专科）的《机器学习》教材，12 章 36 个动手实验
+audience: 成人教育（继续教育）人工智能技术应用专业专科学生，多为在职学习者
+github_user: MingziFu9                # 网址 https://<github_user>.github.io/<repo>/
+repo: ml-textbook            # GitHub 仓库名（用模板新建后改成本课的，如 ml-textbook）
+
+credits: 5                            # 学分
+hours: {theory: 60, lab: 30}          # 学时：理论 + 实验
+semester: 3                           # 开课学期
+exam: 闭卷                            # 期末考核方式
+labs_per_chapter: 3                   # 每章实验数；0 表示没有实验
+lab_section: 本章实验                 # 实验部分的二级标题；导论用“在线体验”
+lab_word: 实验                        # 每个实验的三级标题前缀（### 实验 N-M）；导论用“体验”
+frontier_title: 前沿视窗              # 每章“前沿”小节的名称，导论用“身边的 AI”
+certificates:                         # 对应的职业证书；没有证书的课程写成 certificates: []，导航里就不显示“证书考点对照”页
+  - name: 人工智能训练师（三级）
+    issuer: 人力资源和社会保障部、工业和信息化部，《人工智能训练师国家职业技能标准》（2021 年版）
+  - name: 人工智能数据处理工程师（高级）
+    issuer: 工业和信息化部教育与考试中心，《人工智能数据处理工程师》培训课程标准（试行版，2022）
+  - name: Python 技术应用工程师（高级）
+    issuer: 工业和信息化部教育与考试中心（未找到官方考纲，依据培训机构转述）
+  - name: 人工智能应用工程师（高级）
+    issuer: 工业和信息化部教育与考试中心（未找到官方考纲，依据培训机构转述）
+
+# 章节：dir 是 docs/chapters/ 下的文件夹名（两位章号开头），short 用于学习图谱等窄处
+# theory / lab 是本章学时；labs 可单独覆盖本章实验数
+chapters:
+  - {dir: 01-intro, title: "机器学习概述与项目流程", short: "概述与流程", theory: 4, lab: 2}
+  - {dir: 02-preprocessing, title: "数据预处理与特征工程", short: "预处理与特征工程", theory: 5, lab: 3}
+  - {dir: 03-linear-regression, title: "线性回归与梯度下降", short: "线性回归", theory: 5, lab: 2}
+  - {dir: 04-logistic-regression, title: "逻辑回归与分类模型评估", short: "逻辑回归与评估", theory: 6, lab: 3}
+  - {dir: 05-decision-tree, title: "决策树与集成学习", short: "决策树与集成", theory: 6, lab: 3}
+  - {dir: 06-svm, title: "支持向量机", short: "支持向量机", theory: 4, lab: 2}
+  - {dir: 07-knn-bayes-rules, title: "K 近邻、朴素贝叶斯与关联规则", short: "KNN、贝叶斯与关联规则", theory: 5, lab: 2}
+  - {dir: 08-clustering, title: "聚类、降维与异常检测", short: "聚类与降维", theory: 5, lab: 3}
+  - {dir: 09-model-tuning, title: "模型选择、调优与部署", short: "调优与部署", theory: 5, lab: 3}
+  - {dir: 10-neural-network, title: "神经网络基础", short: "神经网络", theory: 5, lab: 2}
+  - {dir: 11-cnn-rnn, title: "卷积神经网络与循环神经网络", short: "CNN 与 RNN", theory: 5, lab: 3}
+  - {dir: 12-timeseries-rl, title: "时间序列预测与强化学习入门", short: "时序与强化学习", theory: 5, lab: 2}
+
+# 附录：docs/appendix/ 下的文件，按顺序自动编号为 A、B、C……（术语表固定为 glossary.md）
+appendices:
+  - {file: a-python.md, title: Python 速查}
+  - {file: b-libraries.md, title: 工具库速查}
+  - {file: c-environment.md, title: 实验环境、数据与算力说明}
+  - {file: glossary.md, title: 术语表}
+
+# 教案默认设置（每章可在 lesson-plans/chNN.yml 里覆盖）
+lesson_plan:
+  online_ratio: 0.5                   # 线上学时占比（开放大学以线上为主，按实际改）
+  teacher: ""                         # 授课教师，留空则教案上留出填写位置
+  school: ""                          # 学校名称，留空则不显示

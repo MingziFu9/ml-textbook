@@ -49,8 +49,8 @@ nav:
   - "第 12 章 时间序列预测与强化学习入门": chapters/12-timeseries-rl/index.md
   - 交互动画:
     - sims/index.md
-    - "决策树生长": sims/decision-tree-split/index.md
     - "Bagging 与 Boosting": sims/bagging-boosting/index.md
+    - "决策树生长": sims/decision-tree-split/index.md
   - 学习图谱: learning-graph/index.md
   - 常见问题: faq/index.md
   - 证书考点对照: certificate.md
