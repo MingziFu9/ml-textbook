@@ -9,6 +9,7 @@
     telco_churn.csv    电信客户流失，5000 行（第 4、5、9 章）
     house_raw.csv      广州二手房挂牌数据（未清洗，故意带缺失、重复、异常和格式问题），约 3000 行（第 2、3、9 章）
     card_fraud.csv     信用卡交易，欺诈约占 1%，20000 行（第 4、8 章）
+    basket.csv         社区超市购物小票，3000 张（第 7 章）
 """
 import numpy as np
 import pandas as pd
@@ -221,6 +222,39 @@ def make_fraud(n=20000, seed=SEED + 3):
     })
 
 
+def make_basket(n=3000, seed=SEED + 4):
+    """社区超市购物小票：按几种常见的购物场景（早餐、火锅、看球、宝宝用品、洗漱、宵夜）成组出现，
+    再加上随手买的日常商品。鸡蛋、矿泉水、纸巾等是“人人都买”的热门商品，和谁都容易一起出现。"""
+    rng = np.random.default_rng(seed)
+    # 场景：(出现概率, 核心商品, [(连带商品, 条件概率), ...])
+    scenes = [
+        (0.16, "面包", [("牛奶", 0.55), ("鸡蛋", 0.25), ("火腿肠", 0.10)]),
+        (0.07, "火锅底料", [("肥牛卷", 0.75), ("丸子", 0.65), ("生菜", 0.50), ("啤酒", 0.20)]),
+        (0.09, "啤酒", [("花生", 0.45), ("薯片", 0.35), ("鸭脖", 0.30)]),
+        (0.05, "纸尿裤", [("湿巾", 0.70), ("奶粉", 0.25), ("啤酒", 0.08)]),
+        (0.06, "牙膏", [("牙刷", 0.60), ("洗发水", 0.20)]),
+        (0.08, "方便面", [("火腿肠", 0.55), ("卤蛋", 0.30), ("可乐", 0.20)]),
+        (0.07, "可乐", [("薯片", 0.40)]),
+    ]
+    # 随手买的日常商品及每张小票的购买概率
+    daily = {"鸡蛋": 0.20, "矿泉水": 0.18, "纸巾": 0.15, "苹果": 0.12, "香蕉": 0.12, "酸奶": 0.10, "大米": 0.06,
+             "食用油": 0.05, "洗衣液": 0.06, "牛奶": 0.08, "生菜": 0.05, "西红柿": 0.09, "薯片": 0.05, "饼干": 0.08,
+             "湿巾": 0.04, "牙刷": 0.03, "火腿肠": 0.04, "花生": 0.03, "鸭脖": 0.02, "卤蛋": 0.02, "丸子": 0.02,
+             "肥牛卷": 0.015, "洗发水": 0.03, "奶粉": 0.01, "可乐": 0.03, "啤酒": 0.03}
+    rows = []
+    for i in range(n):
+        basket = set()
+        for p, core, extra in scenes:
+            if rng.random() < p:
+                basket.add(core)
+                basket.update(item for item, q in extra if rng.random() < q)
+        basket.update(item for item, q in daily.items() if rng.random() < q)
+        if not basket:
+            basket.add(rng.choice(list(daily)))
+        rows.append({"小票编号": f"R{20261001 + i}", "商品": "|".join(sorted(basket))})
+    return pd.DataFrame(rows)
+
+
 if __name__ == "__main__":
     loan = make_loan()
     loan.to_csv("loan_apply.csv", index=False, encoding="utf-8-sig")
@@ -234,3 +268,6 @@ if __name__ == "__main__":
     fraud = make_fraud()
     fraud.to_csv("card_fraud.csv", index=False, encoding="utf-8-sig")
     print(f"card_fraud.csv：{len(fraud)} 行，欺诈率 {fraud['是否欺诈'].mean():.2%}")
+    basket = make_basket()
+    basket.to_csv("basket.csv", index=False, encoding="utf-8-sig")
+    print(f"basket.csv：{len(basket)} 张小票，平均每张 {basket['商品'].str.count('[|]').add(1).mean():.1f} 件商品")

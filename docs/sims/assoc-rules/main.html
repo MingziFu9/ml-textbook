@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>关联规则计算器</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+.items button { margin:2px; }
+table.t td.hitA { background:#e8eaf6; }
+table.t tr.both td { background:#c8e6c9; }
+table.t tr.onlyA td { background:#e8eaf6; }
+table.t th:first-child, table.t td:first-child { width:4em; white-space:nowrap; }
+table.t td:last-child { text-align:left; }
+.kpi { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px; }
+.kpi div { border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:12px; }
+.kpi b { display:block; font-size:18px; }
+.kpi .f { color:var(--muted); font-size:12px; }
+@media (max-width:620px) { .kpi { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>关联规则计算器：选出规则的前件和后件，自动算支持度、置信度、提升度</h1>
+<div class="sub">10 张超市小票与教材 7.4.2 节“算一算”相同。先在“如果买了”里选一件或几件商品（前件），再在“那么也买”里选商品（后件）。表格中蓝色是含前件的小票，绿色是前件、后件都含的小票。</div>
+<div class="row items"><span>如果买了：</span><span id="A"></span></div>
+<div class="row items"><span>那么也买：</span><span id="B"></span></div>
+<div class="row ex"><span class="lbl">试一试：</span><button data-r="面包|牛奶">面包 → 牛奶</button><button data-r="牛奶|面包">牛奶 → 面包</button><button data-r="啤酒|花生">啤酒 → 花生</button><button data-r="花生|啤酒">花生 → 啤酒</button><button data-r="面包|鸡蛋">面包 → 鸡蛋</button><button data-r="啤酒|面包">啤酒 → 面包</button><button data-r="面包,牛奶|鸡蛋">面包、牛奶 → 鸡蛋</button></div>
+<table class="t" style="width:100%"><thead><tr><th>小票</th><th>商品</th></tr></thead><tbody id="tb"></tbody></table>
+<div class="kpi">
+  <div>支持度<b id="sup">—</b><span class="f" id="supf"></span></div>
+  <div>置信度<b id="conf">—</b><span class="f" id="conff"></span></div>
+  <div>提升度<b id="lift">—</b><span class="f" id="liftf"></span></div>
+</div>
+<div class="msg" id="msg"></div>
+<div class="note">支持度 = 前件、后件都含的小票数 ÷ 小票总数；置信度 = 前件、后件都含的小票数 ÷ 含前件的小票数；提升度 = 置信度 ÷ 后件的支持度。提升度大于 1 表示买了前件的顾客更可能买后件，等于 1 表示没有关系，小于 1 表示反而不太买。</div>
+<script>
+(function () {
+  var R = [["面包", "牛奶", "鸡蛋"], ["面包", "牛奶"], ["啤酒", "花生"], ["面包", "牛奶", "啤酒"], ["牛奶", "鸡蛋"],
+           ["啤酒", "花生", "薯片"], ["面包", "鸡蛋"], ["纸尿裤", "湿巾", "啤酒"], ["面包", "牛奶", "鸡蛋", "薯片"], ["啤酒", "薯片"]];
+  var ITEMS = ["面包", "牛奶", "鸡蛋", "啤酒", "花生", "薯片", "纸尿裤", "湿巾"];
+  var A = {}, B = {};
+  function btns(id, set) {
+    var el = document.getElementById(id);
+    ITEMS.forEach(function (it) {
+      var b = document.createElement("button"); b.textContent = it; b.dataset.it = it;
+      b.onclick = function () { set[it] = !set[it]; if (set[it]) delete (set === A ? B : A)[it]; render(); };
+      el.appendChild(b);
+    });
+  }
+  btns("A", A); btns("B", B);
+  function has(r, set) { return Object.keys(set).filter(function (k) { return set[k]; }).every(function (k) { return r.indexOf(k) >= 0; }); }
+  function render() {
+    document.querySelectorAll("#A button").forEach(function (b) { b.classList.toggle("on", !!A[b.dataset.it]); });
+    document.querySelectorAll("#B button").forEach(function (b) { b.classList.toggle("on", !!B[b.dataset.it]); });
+    var a = Object.keys(A).filter(function (k) { return A[k]; }), c = Object.keys(B).filter(function (k) { return B[k]; });
+    var tb = document.getElementById("tb"); tb.innerHTML = "";
+    var nA = 0, nB = 0, nAB = 0;
+    R.forEach(function (r, i) {
+      var ha = a.length && has(r, A), hb = c.length && has(r, B);
+      if (ha) nA++; if (hb) nB++; if (ha && hb) nAB++;
+      var tr = document.createElement("tr"); tr.className = ha && hb ? "both" : ha ? "onlyA" : "";
+      tr.innerHTML = "<td>" + (i + 1) + "</td><td>" + r.join("、") + "</td>"; tb.appendChild(tr);
+    });
+    var ids = ["sup", "conf", "lift", "supf", "conff", "liftf"];
+    if (!a.length || !c.length) { ids.forEach(function (id) { document.getElementById(id).textContent = id.length > 4 ? "" : "—"; });
+      document.getElementById("msg").textContent = "请在两行中各选至少一件商品。"; return; }
+    var N = R.length, sup = nAB / N, conf = nA ? nAB / nA : 0, sB = nB / N, lift = sB ? conf / sB : 0;
+    document.getElementById("sup").textContent = sup.toFixed(2);
+    document.getElementById("supf").textContent = nAB + " ÷ " + N;
+    document.getElementById("conf").textContent = nA ? conf.toFixed(2) : "—";
+    document.getElementById("conff").textContent = nAB + " ÷ " + nA + "（含前件 " + nA + " 张）";
+    document.getElementById("lift").textContent = nA && nB ? lift.toFixed(2) : "—";
+    document.getElementById("liftf").textContent = conf.toFixed(2) + " ÷ " + sB.toFixed(2) + "（后件的支持度 " + nB + "/" + N + "）";
+    var msg = "{" + a.join("、") + "} → {" + c.join("、") + "}：";
+    if (!nA) msg += "没有小票含前件，规则无从谈起。";
+    else if (lift > 1.2) msg += "提升度大于 1，买了前件的顾客买后件的比例，比一般顾客高 " + Math.round((lift - 1) * 100) + "%。";
+    else if (lift >= 0.8) msg += "提升度接近 1，前件和后件基本没有关系，即使置信度看上去不低，也只是因为后件本身就常被买。";
+    else msg += "提升度小于 1，买了前件的顾客反而不太买后件。";
+    if (sup < 0.3 && nA) msg += " 支持度 " + sup.toFixed(2) + "，若最小支持度定为 0.3，这条规则不会被 Apriori 找出来。";
+    document.getElementById("msg").textContent = msg;
+  }
+  document.querySelectorAll("[data-r]").forEach(function (b) {
+    b.onclick = function () {
+      var parts = b.dataset.r.split("|"); A = {}; B = {};
+      parts[0].split(",").forEach(function (k) { A[k] = true; }); parts[1].split(",").forEach(function (k) { B[k] = true; });
+      rebind(); render();
+    };
+  });
+  function rebind() {
+    document.querySelectorAll("#A button").forEach(function (b) { b.onclick = function () { A[b.dataset.it] = !A[b.dataset.it]; if (A[b.dataset.it]) delete B[b.dataset.it]; render(); }; });
+    document.querySelectorAll("#B button").forEach(function (b) { b.onclick = function () { B[b.dataset.it] = !B[b.dataset.it]; if (B[b.dataset.it]) delete A[b.dataset.it]; render(); }; });
+  }
+  rebind();
+  A["面包"] = true; B["牛奶"] = true; render();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>

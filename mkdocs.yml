@@ -57,6 +57,8 @@ nav:
     - "Bagging 与 Boosting": sims/bagging-boosting/index.md
     - "决策树生长": sims/decision-tree-split/index.md
     - "SVM 间隔与核函数": sims/svm-margin/index.md
+    - "关联规则计算器": sims/assoc-rules/index.md
+    - "KNN 决策区域": sims/knn-regions/index.md
   - 学习图谱: learning-graph/index.md
   - 常见问题: faq/index.md
   - 证书考点对照: certificate.md

@@ -11,6 +11,10 @@
 | `house_clean.csv` | `house_raw.csv` 按实验 2-2 的清洗规范处理后的结果（未填充缺失值） | 3000 条 | 由 `labs/ch02/lab2_2_clean.py` 生成 | 第 2、3 章 |
 | `card_fraud.csv` | 模拟信用卡交易：交易金额、交易小时、商户类别、是否境外、是否新设备、距上次交易时间、近 24 小时交易次数、距常用地距离、是否欺诈 | 20000 条，欺诈 1.04% | 教材编写，由 `make_datasets.py` 按固定随机种子生成，内容为虚构 | 第 4、8 章 |
 | （scikit-learn 自带）乳腺肿瘤诊断数据 | 威斯康星乳腺癌诊断数据，30 个细胞核形态特征，良性 / 恶性 | 569 例 | `sklearn.datasets.load_breast_cancer()`，安装 scikit-learn 即带，无需下载 | 第 4 章 |
+| `sms_spam.csv` | 英文手机短信及标签（ham 正常 / spam 垃圾），两列：标签、短信 | 5574 条，垃圾短信 747 条 | UCI 机器学习库 SMS Spam Collection（Almeida、Hidalgo，2011），CC BY 4.0 许可，https://doi.org/10.24432/C5CC84 ；原文件制表符分隔，这里转成 CSV，内容未改 | 第 7 章 |
+| `basket.csv` | 模拟社区超市购物小票：小票编号、商品（用“\|”分隔） | 3000 张小票，31 种商品 | 教材编写，由 `make_datasets.py` 按早餐、火锅、看球、宝宝用品等购物场景生成，内容为虚构 | 第 7 章 |
+| （scikit-learn 自带）葡萄酒数据 | 意大利同一产区三个品种葡萄酒的 13 项化学成分 | 178 条 | `sklearn.datasets.load_wine()`，来自 UCI 机器学习库 Wine 数据集 | 第 7 章 |
+| （scikit-learn 自带）手写数字数据 | 8×8 像素手写数字灰度图片 | 1797 张 | `sklearn.datasets.load_digits()`，来自 UCI 机器学习库 Optical Recognition of Handwritten Digits | 第 6、8 章 |
 
 **规模要求**：学生实验默认在普通笔记本电脑的 CPU 上运行，单个数据文件尽量不超过 20 MB，一次训练不超过 10 分钟。更大的数据只用于课堂演示（学校 A40 服务器）或云算力实验，放在网盘，这里只写下载地址和校验值，不提交到仓库。
 
