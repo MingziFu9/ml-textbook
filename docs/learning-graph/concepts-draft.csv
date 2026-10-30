@@ -160,7 +160,7 @@ ConceptID,ConceptLabel,Dependencies,TaxonomyID,Chapter,Owner
 159,购物篮分析,151,UNSUP,7,
 160,推荐系统,159,UNSUP,7,人工智能数据分析与处理
 161,聚类,19|137,UNSUP,8,
-162,K-Means,161|138,UNSUP,8,
+162,K 均值,161|138,UNSUP,8,
 163,簇中心,162,UNSUP,8,
 164,肘部法则,162,UNSUP,8,
 165,轮廓系数,161,UNSUP,8,

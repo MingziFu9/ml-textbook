@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PCA 投影方向</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+canvas { width:100%; height:auto; border:1px solid var(--line); border-radius:6px; background:#fff; }
+.kpi { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px; }
+.kpi div { border:1px solid var(--line); border-radius:6px; padding:4px 8px; font-size:12px; }
+.kpi b { display:block; font-size:16px; }
+.bar { height:10px; background:#eceff1; border-radius:5px; overflow:hidden; margin-top:4px; }
+.bar i { display:block; height:100%; background:#3f51b5; }
+</style>
+</head>
+<body>
+<h1>PCA：把二维压成一维，往哪个方向投影保留的信息最多？</h1>
+<div class="sub">300 位客户的购买次数和消费金额（实验 8-1 的订单数据，都取了对数）。转动红色直线，所有点垂直投影到直线上，变成一维数据。投影后的点分得越开（方差越大），保留的信息越多。</div>
+<div class="row"><span>方向角度</span><input type="range" id="ang" min="0" max="179" step="1" value="0" aria-label="投影方向角度"><b id="angv"></b>
+  <button id="best" class="main">找方差最大的方向</button><label><input type="checkbox" id="res" checked> 显示投影线</label></div>
+<canvas id="cv" width="760" height="420"></canvas>
+<canvas id="strip" width="760" height="60"></canvas>
+<div class="kpi"><div>投影后的方差<b id="var"></b></div><div>保留的方差比例<b id="pct"></b><div class="bar"><i id="pbar"></i></div></div><div>丢掉的方差比例（垂直方向）<b id="lost"></b></div></div>
+<div class="msg" id="msg"></div>
+<div class="note">下面的长条是投影后的一维数据。总方差 = 沿直线的方差 + 垂直直线的方差，转到哪个方向都不变；PCA 的第一主成分就是让沿直线的方差最大（同时投影线总长最短）的方向。scikit-learn 的 PCA 会先把数据中心化（减去均值），图中黑色十字就是均值点。</div>
+<script>
+(function () {
+  var P = {"pts":[[2.0794,6.869],[0.6931,4.2599],[0.6931,4.4427],[0.6931,4.3162],[1.0986,6.2414],[2.1972,7.5315],[0.6931,2.7344],[2.3979,7.7141],[1.6094,6.3402],[1.9459,6.7086],[2.1972,7.3526],[2.0794,7.0451],[1.6094,6.0234],[1.0986,4.6308],[2.6391,8.0514],[2.7081,8.3807],[0.6931,4.1573],[1.9459,7.5781],[1.7918,6.7671],[0.6931,4.0],[1.0986,5.3886],[2.9444,8.5973],[2.0794,6.8512],[1.0986,3.9927],[1.7918,6.1808],[0.6931,3.6428],[2.6391,8.4916],[0.6931,3.6243],[1.7918,6.5568],[1.7918,6.1656],[0.6931,3.7932],[1.0986,5.6914],[2.5649,7.2504],[1.0986,5.3048],[1.9459,6.8465],[2.7726,8.3868],[0.6931,3.5234],[1.7918,6.938],[1.7918,6.7435],[2.5649,7.8528],[1.0986,5.5725],[0.6931,4.6886],[1.6094,5.7134],[0.6931,4.695],[1.9459,6.5225],[1.6094,6.3498],[1.0986,5.1996],[2.9444,8.7168],[2.4849,7.7311],[0.6931,4.0535],[1.9459,6.5097],[1.6094,6.3837],[1.0986,4.9642],[1.7918,6.7622],[1.3863,6.1883],[0.6931,3.9318],[1.3863,5.7343],[1.9459,7.2419],[2.3026,7.0538],[1.6094,6.2927],[1.0986,4.3541],[1.9459,6.794],[2.3979,7.2611],[1.9459,7.5381],[0.6931,4.6821],[1.6094,6.3013],[1.6094,6.1658],[1.6094,5.9982],[2.3026,7.3547],[1.6094,5.9695],[2.3979,7.7578],[1.0986,4.6338],[1.3863,6.4182],[2.1972,7.1153],[2.1972,7.1159],[1.0986,4.7397],[2.1972,7.401],[0.6931,4.4473],[1.7918,6.3552],[1.7918,6.25],[3.1355,8.7165],[0.6931,4.8567],[1.6094,6.2836],[1.0986,5.0708],[3.091,8.6315],[2.1972,7.5207],[2.0794,6.9555],[2.3979,7.5971],[1.0986,5.5947],[1.3863,6.3146],[1.3863,5.7068],[1.7918,6.3914],[1.0986,5.8704],[1.7918,6.3235],[0.6931,4.8767],[2.6391,8.089],[0.6931,4.7077],[2.1972,7.0681],[0.6931,5.0473],[1.7918,6.3788],[1.0986,4.3412],[2.1972,6.9788],[1.6094,6.6527],[1.0986,5.9417],[2.3979,7.7293],[1.6094,6.6645],[1.6094,6.7207],[1.0986,5.1722],[1.0986,4.4864],[1.3863,6.0285],[3.0445,8.8098],[2.0794,7.0014],[2.1972,7.5614],[3.1355,8.5407],[2.8332,8.2168],[1.0986,5.6062],[2.0794,6.9885],[2.5649,8.3047],[2.4849,7.7427],[2.8332,8.3813],[1.0986,4.4555],[1.3863,6.3946],[1.7918,6.2785],[1.9459,6.9193],[2.5649,7.9337],[1.0986,4.0],[1.0986,4.4473],[2.7726,8.3688],[2.0794,6.8307],[2.1972,7.4967],[1.6094,6.3933],[3.0445,8.7502],[2.0794,6.9814],[2.9957,8.5825],[0.6931,4.0],[1.3863,5.8456],[2.0794,7.4444],[0.6931,3.8523],[1.3863,5.6504],[1.3863,6.5256],[1.0986,5.2322],[1.0986,5.2257],[2.3979,7.9244],[2.8904,8.6665],[2.9444,8.671],[1.6094,6.1893],[2.1972,7.1393],[1.7918,6.7909],[2.9444,8.6453],[2.3026,7.0108],[1.7918,6.3854],[1.0986,4.7613],[1.0986,3.9435],[2.4849,8.063],[1.0986,5.937],[1.6094,6.1642],[2.1972,7.1744],[0.6931,4.7732],[0.6931,4.1239],[1.0986,5.5966],[0.6931,3.5322],[1.0986,4.9684],[1.6094,6.175],[2.8904,8.6308],[1.0986,6.2596],[1.0986,5.4372],[1.7918,6.1308],[2.1972,6.436],[2.3026,7.4374],[1.0986,5.0543],[1.0986,5.5162],[0.6931,4.2613],[1.6094,6.4203],[1.7918,6.2385],[1.3863,6.0507],[1.0986,4.653],[0.6931,4.3464],[1.7918,6.4931],[0.6931,3.7565],[1.0986,5.7494],[1.7918,6.3713],[1.0986,5.4081],[1.0986,5.5166],[0.6931,5.0556],[2.0794,6.6099],[1.9459,6.9878],[1.7918,6.2152],[1.3863,5.8447],[2.5649,8.2518],[2.3026,7.2044],[1.6094,6.2108],[2.0794,6.7851],[1.7918,6.5581],[1.9459,6.6957],[1.9459,7.0667],[1.7918,6.4566],[1.0986,5.2842],[2.1972,7.312],[1.0986,5.0039],[1.9459,6.7512],[2.4849,8.1562],[2.1972,7.5333],[1.6094,5.9067],[1.7918,6.6498],[2.6391,8.4025],[1.7918,6.1132],[2.3979,7.7201],[2.3026,7.277],[1.7918,6.337],[1.6094,6.6088],[2.0794,7.0028],[1.9459,7.1044],[2.3026,7.8169],[2.7726,8.4694],[1.7918,6.4141],[0.6931,4.4762],[2.7081,8.407],[2.7726,8.8404],[2.9444,8.5547],[1.7918,6.9238],[0.6931,4.8465],[1.7918,6.6008],[1.0986,5.5322],[2.3979,7.7453],[0.6931,3.6217],[2.5649,7.6576],[3.1781,8.7969],[2.3026,7.6374],[1.0986,4.8775],[2.8904,8.2968],[2.7081,8.4383],[2.4849,7.3349],[0.6931,3.914],[1.0986,3.7658],[2.6391,8.2773],[2.7726,8.0662],[1.7918,6.8461],[1.9459,6.2446],[0.6931,3.0007],[2.0794,7.1286],[0.6931,3.7257],[1.3863,6.2873],[1.0986,5.4143],[2.8332,8.3141],[2.3026,7.4526],[1.9459,6.8467],[0.6931,5.2111],[2.9957,8.6766],[0.6931,3.902],[2.3026,7.0143],[1.7918,6.6427],[2.4849,7.6607],[1.0986,4.4296],[1.9459,6.9845],[1.0986,5.0795],[1.6094,6.1277],[2.1972,7.2958],[1.0986,5.1716],[1.9459,7.0704],[2.4849,7.1775],[1.6094,6.3573],[2.3026,7.3147],[1.6094,6.4759],[1.3863,6.215],[1.6094,6.5776],[1.0986,5.1417],[1.6094,6.4061],[1.3863,5.9275],[2.4849,7.4626],[2.3979,7.9068],[1.3863,5.2761],[1.6094,6.2781],[0.6931,4.3438],[2.4849,7.4613],[1.6094,6.466],[2.0794,7.1566],[1.9459,6.4669],[2.1972,7.218],[1.7918,6.5783],[1.7918,6.5189],[1.0986,5.2497],[1.9459,6.8739],[2.1972,7.2664],[0.6931,4.6444],[0.6931,4.1604],[1.0986,4.5757],[2.0794,6.841],[2.4849,7.5554],[1.6094,5.8568],[1.0986,6.4411],[1.6094,6.8729],[2.0794,6.9967],[2.0794,7.1645],[1.6094,6.2908],[0.6931,4.5369],[1.3863,5.6678],[2.1972,7.2895],[1.0986,4.9359],[2.0794,6.45],[1.9459,7.0179]]}.pts;
+  var cv = document.getElementById("cv"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height;
+  var st = document.getElementById("strip"), sc = st.getContext("2d");
+  var n = P.length, mx = 0, my = 0;
+  P.forEach(function (p) { mx += p[0]; my += p[1]; }); mx /= n; my /= n;
+  var X = P.map(function (p) { return [p[0] - mx, p[1] - my]; });
+  var sxx = 0, syy = 0, sxy = 0;
+  X.forEach(function (p) { sxx += p[0] * p[0]; syy += p[1] * p[1]; sxy += p[0] * p[1]; });
+  sxx /= n - 1; syy /= n - 1; sxy /= n - 1;
+  var total = sxx + syy;
+  var bestAng = 0.5 * Math.atan2(2 * sxy, sxx - syy) * 180 / Math.PI; if (bestAng < 0) bestAng += 180;
+  // 两个方向同一比例，角度才是真实的几何角度
+  var x0 = 0, x1 = 3.6, y0 = 2.4, y1 = 9.2, s = Math.min(W / (x1 - x0), H / (y1 - y0));
+  var ox = (W - s * (x1 - x0)) / 2, oy = (H - s * (y1 - y0)) / 2;
+  function sx(x) { return ox + (x - x0) * s; }
+  function sy(y) { return H - oy - (y - y0) * s; }
+  function varAt(a) { var c = Math.cos(a), d = Math.sin(a); return c * c * sxx + 2 * c * d * sxy + d * d * syy; }
+  function draw() {
+    var deg = +document.getElementById("ang").value, a = deg * Math.PI / 180, u = [Math.cos(a), Math.sin(a)];
+    var v = varAt(a), pct = v / total;
+    document.getElementById("angv").textContent = deg + "°";
+    document.getElementById("var").textContent = v.toFixed(3);
+    document.getElementById("pct").textContent = (pct * 100).toFixed(1) + "%";
+    document.getElementById("pbar").style.width = (pct * 100) + "%";
+    document.getElementById("lost").textContent = ((1 - pct) * 100).toFixed(1) + "%";
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = "#cfd8dc"; ctx.fillStyle = "#78909c"; ctx.font = "12px sans-serif"; ctx.lineWidth = 1;
+    for (var gx = 1; gx <= 3; gx++) { ctx.beginPath(); ctx.moveTo(sx(gx), 0); ctx.lineTo(sx(gx), H); ctx.stroke(); ctx.fillText(gx, sx(gx) + 3, H - 6); }
+    ctx.fillText("横轴：ln(1 + 购买次数)", sx(3) + 20, H - 6);
+    for (var gy = 3; gy <= 9; gy += 2) { ctx.beginPath(); ctx.moveTo(0, sy(gy)); ctx.lineTo(W, sy(gy)); ctx.stroke(); ctx.fillText(gy, 4, sy(gy) - 3); }
+    ctx.fillText("纵轴：ln(1 + 消费金额)", 24, 14);
+    var proj = X.map(function (p) { return p[0] * u[0] + p[1] * u[1]; });
+    if (document.getElementById("res").checked) {
+      ctx.strokeStyle = "rgba(229,57,53,0.35)"; ctx.lineWidth = 1;
+      P.forEach(function (p, i) { ctx.beginPath(); ctx.moveTo(sx(p[0]), sy(p[1])); ctx.lineTo(sx(mx + proj[i] * u[0]), sy(my + proj[i] * u[1])); ctx.stroke(); });
+    }
+    ctx.strokeStyle = "#e53935"; ctx.lineWidth = 2.5; ctx.beginPath();
+    ctx.moveTo(sx(mx - 8 * u[0]), sy(my - 8 * u[1])); ctx.lineTo(sx(mx + 8 * u[0]), sy(my + 8 * u[1])); ctx.stroke();
+    ctx.fillStyle = "#3f51b5"; ctx.globalAlpha = 0.65;
+    P.forEach(function (p) { ctx.beginPath(); ctx.arc(sx(p[0]), sy(p[1]), 3.2, 0, 7); ctx.fill(); });
+    ctx.globalAlpha = 1; ctx.fillStyle = "#e53935";
+    proj.forEach(function (t) { ctx.beginPath(); ctx.arc(sx(mx + t * u[0]), sy(my + t * u[1]), 2, 0, 7); ctx.fill(); });
+    ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(sx(mx) - 7, sy(my)); ctx.lineTo(sx(mx) + 7, sy(my)); ctx.moveTo(sx(mx), sy(my) - 7); ctx.lineTo(sx(mx), sy(my) + 7); ctx.stroke();
+    sc.clearRect(0, 0, W, 60); sc.strokeStyle = "#90a4ae"; sc.beginPath(); sc.moveTo(10, 30); sc.lineTo(W - 10, 30); sc.stroke();
+    sc.fillStyle = "#e53935"; sc.globalAlpha = 0.5;
+    proj.forEach(function (t) { var x = W / 2 + t * (W - 40) / 7; sc.fillRect(x - 1, 18, 2, 24); });
+    sc.globalAlpha = 1; sc.fillStyle = "#555"; sc.font = "12px sans-serif"; sc.fillText("投影后的一维数据（以均值为 0）", 10, 12);
+    var m;
+    if (Math.abs(deg - bestAng) < 0.6) m = "这就是第一主成分的方向（约 " + bestAng.toFixed(1) + "°）：一个数保留了 " + (pct * 100).toFixed(1) + "% 的方差。买得多的客户花得也多，两个特征高度相关，压成一个“购买力”分数几乎不丢信息。";
+    else if (pct < 0.3) m = "投影后的点挤成一团，大部分差异都丢掉了。这个方向接近第二主成分。";
+    else m = "转动直线，找让红点在长条上分得最开的方向。";
+    document.getElementById("msg").textContent = m;
+  }
+  document.getElementById("ang").oninput = draw;
+  document.getElementById("res").onchange = draw;
+  document.getElementById("best").onclick = function () {
+    var el = document.getElementById("ang"), target = Math.round(bestAng * 10) / 10;
+    (function loop() { var c = +el.value, d = target - c; if (Math.abs(d) < 1) { el.value = Math.round(target); draw(); return; } el.value = c + Math.sign(d) * Math.max(1, Math.round(Math.abs(d) / 6)); draw(); setTimeout(loop, 30); })();
+  };
+  window.PCA = { bestAng: bestAng, pct: function (d) { return varAt(d * Math.PI / 180) / total; } };
+  draw();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>

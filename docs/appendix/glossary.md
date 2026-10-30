@@ -225,6 +225,23 @@ description: 本书主要术语的中英文名称、简明定义和例子，按�
 
 | 术语 | 英文 | 定义 | 例子 |
 |---|---|---|---|
+| <span id="g-聚类"></span>聚类 | Clustering | 把没有标签的样本按相似程度自动分成若干组的无监督学习任务 | 按 R、F、M 把 2000 位客户分成四群 |
+| <span id="g-K-均值"></span>K 均值 | K-Means | 先选 K 个中心、再交替执行“分组”和“更新中心”的聚类方法 | 6 个点、初始中心 A 和 B，迭代两轮后收敛到 (1.33, 1.33) 和 (6.33, 5.33) |
+| <span id="g-簇中心"></span>簇中心 | Cluster Center, Centroid | K 均值中代表一个簇的点，等于簇内所有样本的平均位置 | `KMeans` 的 `cluster_centers_` |
+| <span id="g-肘部法则"></span>肘部法则 | Elbow Method | 画出簇内平方和随 K 变化的曲线，取下降由快变慢的拐点作为 K 的方法 | 实验 8-1 中曲线在 K = 4 之后变缓 |
+| <span id="g-轮廓系数"></span>轮廓系数 | Silhouette Coefficient | 用 s = (b − a) / max(a, b) 衡量样本与本簇是否紧凑、与别簇是否分开的指标，取值 −1 到 1，越大越好 | 实验 8-1 中 K = 4 时最高，为 0.433 |
+| <span id="g-层次聚类"></span>层次聚类 | Hierarchical Clustering | 从每个样本自成一簇开始，每次合并最相近的两个簇，逐层形成树状结构的聚类方法 | 单链接的层次聚类完全分开两个月牙 |
+| <span id="g-树状图"></span>树状图 | Dendrogram | 画出层次聚类合并过程的树形图，纵轴是合并时的距离，横切一刀得到若干簇 | 在高度 3 处切，得到 3 个簇 |
+| <span id="g-DBSCAN"></span>DBSCAN | Density-Based Spatial Clustering of Applications with Noise | 按密度找簇的聚类方法：密集区域连成簇，稀疏处的点作为噪声点，不需要事先给出簇数 | `DBSCAN(eps=0.3, min_samples=5)` |
+| <span id="g-密度可达"></span>密度可达 | Density-Reachable | DBSCAN 中，从一个核心点出发，经过一串相邻的核心点能够到达某个点的关系；相互密度可达的点属于同一簇 | 一维数据 1、2、3、4 中，1 和 4 经核心点 2、3 相互密度可达 |
+| <span id="g-噪声点"></span>噪声点 | Noise Point | DBSCAN 中既不是核心点、也不在任何核心点邻域内的点，不属于任何簇，编号为 −1 | 1、2、3、4、10、11、12、20 中的 20 |
+| <span id="g-客户分群"></span>客户分群 | Customer Segmentation | 按消费行为等特征把客户分成若干群、对不同群采取不同运营策略的做法，常用 RFM 模型 | 高价值忠实、流失风险、新客与潜力、低价值沉睡 |
+| <span id="g-降维"></span>降维 | Dimensionality Reduction | 把很多个特征压缩成少数几个新特征，同时尽量保留原有信息的方法 | 64 个像素特征降到 2 维画图 |
+| <span id="g-主成分分析"></span>主成分分析 | Principal Component Analysis, PCA | 寻找数据方差最大的若干个相互垂直的方向，把数据投影到这些方向上实现降维的方法 | 购买次数和消费金额压成一个“购买力”分数，保留 98.5% 的方差 |
+| <span id="g-方差解释率"></span>方差解释率 | Explained Variance Ratio | 一个主成分保留的方差占全部方差的比例，用于决定保留几个主成分 | 手写数字前 2 个主成分合计 28.5% |
+| <span id="g-t-SNE"></span>t-SNE | t-Distributed Stochastic Neighbor Embedding | 让高维空间中相近的样本在二维图上也相近的非线性降维方法，只用于可视化 | 手写数字的 10 个数字在 t-SNE 图上各成一团 |
+| <span id="g-异常检测"></span>异常检测 | Anomaly Detection | 从大量数据中找出与大多数样本明显不同的少数样本的任务，常用无监督方法 | 在 20000 笔交易中找出可疑交易 |
+| <span id="g-孤立森林"></span>孤立森林 | Isolation Forest | 用许多棵随机切分的树，按样本被单独切出所需的平均次数衡量异常程度的方法，次数越少越异常 | `IsolationForest(contamination=0.01)` 标出 200 笔，其中 54 笔是欺诈 |
 
 ## 第 9 章 模型选择、调优与部署
 

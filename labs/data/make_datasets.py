@@ -10,6 +10,7 @@
     house_raw.csv      广州二手房挂牌数据（未清洗，故意带缺失、重复、异常和格式问题），约 3000 行（第 2、3、9 章）
     card_fraud.csv     信用卡交易，欺诈约占 1%，20000 行（第 4、8 章）
     basket.csv         社区超市购物小票，3000 张（第 7 章）
+    orders.csv         电商订单，2000 个客户一年的订单（第 8 章）
 """
 import numpy as np
 import pandas as pd
@@ -255,6 +256,33 @@ def make_basket(n=3000, seed=SEED + 4):
     return pd.DataFrame(rows)
 
 
+def make_orders(n_customers=2000, seed=SEED + 5):
+    """电商订单：2025-10-01 至 2026-09-30 一年的订单。客户分几种类型（忠实高价值、一般活跃、新客、
+    流失风险、低价偶尔），但数据里不给类型，留给聚类去发现。"""
+    rng = np.random.default_rng(seed)
+    start, days = pd.Timestamp("2025-10-01"), 365
+    kinds = rng.choice(5, n_customers, p=[0.12, 0.35, 0.18, 0.20, 0.15])
+    rows = []
+    for cid, k in enumerate(kinds):
+        if k == 0:    # 忠实高价值：买得勤、最近还在买、客单价高
+            n, lo, hi, mu = rng.poisson(12) + 4, 0, days, 260
+        elif k == 1:  # 一般活跃
+            n, lo, hi, mu = rng.poisson(3) + 2, 0, days, 120
+        elif k == 2:  # 新客：最近两个月才来
+            n, lo, hi, mu = rng.integers(1, 3), days - 60, days, 110
+        elif k == 3:  # 流失风险：以前常买，近五个月没来
+            n, lo, hi, mu = rng.poisson(5) + 3, 0, days - rng.integers(150, 250), 160
+        else:         # 低价偶尔
+            n, lo, hi, mu = rng.integers(1, 3), 0, days, 45
+        d = np.sort(rng.integers(lo, hi, n))
+        amt = np.round(rng.lognormal(np.log(mu), 0.55, n), 1)
+        rows += [(f"C{10001 + cid}", start + pd.Timedelta(days=int(x)), a) for x, a in zip(d, amt)]
+    df = pd.DataFrame(rows, columns=["客户编号", "下单日期", "实付金额"]).sort_values("下单日期", kind="stable")
+    df.insert(0, "订单编号", [f"D{2025100000 + i}" for i in range(len(df))])
+    df["下单日期"] = df["下单日期"].dt.strftime("%Y-%m-%d")
+    return df.reset_index(drop=True)
+
+
 if __name__ == "__main__":
     loan = make_loan()
     loan.to_csv("loan_apply.csv", index=False, encoding="utf-8-sig")
@@ -271,3 +299,6 @@ if __name__ == "__main__":
     basket = make_basket()
     basket.to_csv("basket.csv", index=False, encoding="utf-8-sig")
     print(f"basket.csv：{len(basket)} 张小票，平均每张 {basket['商品'].str.count('[|]').add(1).mean():.1f} 件商品")
+    orders = make_orders()
+    orders.to_csv("orders.csv", index=False, encoding="utf-8-sig")
+    print(f"orders.csv：{len(orders)} 条订单，{orders['客户编号'].nunique()} 个客户")

@@ -10,3 +10,4 @@ labs/**/*.png
 labs/**/out*.txt
 labs/ch04/churn_top50.csv
 labs/ch04/lab4_2_scores.json
+labs/ch08/customer_segments.csv
