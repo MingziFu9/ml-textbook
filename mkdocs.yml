@@ -56,6 +56,7 @@ nav:
     - "阈值、混淆矩阵与 ROC": sims/threshold-roc/index.md
     - "Bagging 与 Boosting": sims/bagging-boosting/index.md
     - "决策树生长": sims/decision-tree-split/index.md
+    - "SVM 间隔与核函数": sims/svm-margin/index.md
   - 学习图谱: learning-graph/index.md
   - 常见问题: faq/index.md
   - 证书考点对照: certificate.md
