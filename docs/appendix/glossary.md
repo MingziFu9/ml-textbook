@@ -247,6 +247,27 @@ description: 本书主要术语的中英文名称、简明定义和例子，按�
 
 | 术语 | 英文 | 定义 | 例子 |
 |---|---|---|---|
+| <span id="g-偏差与方差"></span>偏差与方差 | Bias and Variance | 模型误差的两个来源：偏差是模型假设与真实规律的系统性差距（欠拟合），方差是模型对训练数据变化的敏感程度（过拟合） | 线性回归偏差大；不限深度的决策树方差大 |
+| <span id="g-交叉验证"></span>交叉验证 | Cross Validation | 把数据分成几份、轮流做测试集，取多次成绩平均值的评价方法 | 深度 5 的决策树 5 折交叉验证平均 0.780 |
+| <span id="g-K-折交叉验证"></span>K 折交叉验证 | K-Fold Cross Validation | 把数据平均分成 K 份，做 K 轮，每轮用一份验证、其余 K − 1 份训练，取 K 个分数平均的方法 | `cross_val_score(model, X, y, cv=5)` |
+| <span id="g-分层抽样"></span>分层抽样 | Stratified Sampling | 按类别比例抽取样本，使每一份中各类别的比例与整体一致的抽样方法 | `StratifiedKFold`、`train_test_split(..., stratify=y)` |
+| <span id="g-时间序列交叉验证"></span>时间序列交叉验证 | Time Series Cross Validation | 按时间顺序划分、每一折只用过去的数据训练并预测之后一段的交叉验证方法 | 用 1～4 月训练、预测 5～6 月 |
+| <span id="g-学习曲线"></span>学习曲线 | Learning Curve | 训练得分和验证得分随训练样本数变化的曲线，用于诊断欠拟合和过拟合 | 不限深度决策树训练 1.000、验证 0.707 |
+| <span id="g-验证曲线"></span>验证曲线 | Validation Curve | 训练得分和验证得分随某个超参数取值变化的曲线，用于选择超参数 | 决策树最大深度 4 时验证得分最高 |
+| <span id="g-网格搜索"></span>网格搜索 | Grid Search | 列出每个超参数的候选值，试遍所有组合并用交叉验证打分的调参方法 | 3 × 4 × 3 = 36 种组合 |
+| <span id="g-随机搜索"></span>随机搜索 | Random Search | 在给定范围内随机抽取若干组超参数进行试验的调参方法 | `RandomizedSearchCV(n_iter=36)` |
+| <span id="g-Optuna-调参"></span>Optuna 调参 | Optuna Tuning | 用 Optuna 库根据已有试验结果决定下一次试验取值的自动调参方法 | 36 次试验，交叉验证 AUC 0.842 → 0.865 |
+| <span id="g-流水线"></span>流水线 | Pipeline | 把预处理步骤和模型按顺序串成一个整体，统一 fit 和 predict，防止数据泄露 | 列转换器 + 逻辑回归 |
+| <span id="g-列转换器"></span>列转换器 | ColumnTransformer | 对表格中不同的列分别做不同预处理再拼接结果的工具 | 数值列标准化，类别列独热编码 |
+| <span id="g-置换重要性"></span>置换重要性 | Permutation Importance | 把某一列的值随机打乱后模型成绩下降的幅度，用来衡量模型对该特征的依赖程度 | 打乱合约类型，测试 AUC 下降 0.140 |
+| <span id="g-SHAP-值"></span>SHAP 值 | SHAP Value | 把一次预测分解为基准值加各特征贡献的解释方法，贡献为正推高预测、为负拉低预测 | 在网 2 个月使流失的对数几率增加 1.402 |
+| <span id="g-模型保存"></span>模型保存 | Model Persistence | 把训练好的模型存成文件，以后直接加载使用而不必重新训练 | 保存整条流水线，69 KB |
+| <span id="g-joblib"></span>joblib | joblib | scikit-learn 推荐的模型保存与加载工具 | `joblib.dump(pipe, "churn_model.joblib")` |
+| <span id="g-模型接口"></span>模型接口 | Model API | 把模型放在服务器上，其他程序通过网络发送数据、获取预测结果的服务方式 | `POST /predict` 返回流失概率和风险等级 |
+| <span id="g-FastAPI"></span>FastAPI | FastAPI | 用 Python 编写网络接口的框架，能自动检查请求数据并生成接口文档 | 不合法的请求返回状态码 422 |
+| <span id="g-Gradio"></span>Gradio | Gradio | 用几行 Python 代码把函数变成可交互网页的工具，常用于模型演示 | `gr.Interface(fn=predict, ...)` |
+| <span id="g-模型部署"></span>模型部署 | Model Deployment | 把训练好的模型交给使用者、在实际业务中运行的全部工作 | 用接口或网页提供流失预测服务 |
+| <span id="g-数据漂移"></span>数据漂移 | Data Drift | 上线后输入数据的分布与训练时相比发生变化的现象，常用 PSI 监控 | 涨价后月消费的 PSI 为 0.313 |
 
 ## 第 10 章 神经网络基础
 

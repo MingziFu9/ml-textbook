@@ -62,6 +62,7 @@ nav:
     - "DBSCAN 密度聚类": sims/dbscan-density/index.md
     - "K-Means 迭代": sims/kmeans-steps/index.md
     - "PCA 投影方向": sims/pca-projection/index.md
+    - "K 折交叉验证": sims/kfold-cv/index.md
   - 学习图谱: learning-graph/index.md
   - 常见问题: faq/index.md
   - 证书考点对照: certificate.md

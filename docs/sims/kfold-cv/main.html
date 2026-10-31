@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K 折交叉验证</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+.grid { display:grid; gap:3px; margin-top:8px; }
+.cell { height:30px; border-radius:4px; position:relative; transition:background .25s, opacity .25s; }
+.cell.tr { background:#9fa8da; } .cell.va { background:#ffb74d; } .cell.no { background:#eceff1; }
+.cell .dot { position:absolute; left:50%; top:50%; width:9px; height:9px; margin:-4.5px; border-radius:50%; }
+.cell .dot.y { background:#c62828; } .cell .dot.n { background:#fff; border:1px solid #90a4ae; }
+.lab { font-size:12px; color:#555; display:flex; align-items:center; white-space:nowrap; }
+.rate { font-size:12px; display:flex; align-items:center; white-space:nowrap; }
+.dim { opacity:.35; }
+.legend { font-size:12px; color:#555; margin-top:6px; }
+.legend i { display:inline-block; width:14px; height:12px; border-radius:3px; vertical-align:-2px; margin:0 4px 0 12px; }
+.hdr { font-size:11px; color:#90a4ae; text-align:center; }
+</style>
+</head>
+<body>
+<h1>K 折交叉验证：每一折谁训练、谁验证？</h1>
+<div class="sub">20 位客户，其中 6 位流失（红点，占 30%），数据按客户编号存放，流失客户恰好集中在后面。换不同的划分方法和折数，看每一折的验证集是谁、验证集里流失客户占多少。</div>
+<div class="row ex"><span class="lbl">划分方法：</span><button data-m="kf" class="on">普通 K 折</button><button data-m="kfs">打乱后 K 折</button><button data-m="skf">分层 K 折</button><button data-m="ts">时间序列交叉验证</button></div>
+<div class="row"><span>折数 K</span><input type="range" id="K" min="2" max="10" step="1" value="5" aria-label="折数 K"><b id="Kv"></b>
+  <button id="step" class="main">下一折</button><button id="all">显示全部</button></div>
+<div id="grid" class="grid"></div>
+<div class="legend"><i style="background:#9fa8da"></i>训练集<i style="background:#ffb74d"></i>验证集<i style="background:#eceff1"></i>本折不用<i style="background:#c62828;border-radius:50%;width:10px;height:10px"></i>流失客户</div>
+<div class="msg" id="msg"></div>
+<div class="note">K 折交叉验证把数据分成 K 份，轮流拿其中一份做验证、其余 K − 1 份训练，得到 K 个分数取平均。分层 K 折让每一折的类别比例与整体一致；时间序列交叉验证只用过去预测未来，训练集随时间往后扩展。实验 9-1 中，深度 5 的决策树做 5 折分层交叉验证，五折准确率为 0.790、0.776、0.800、0.749、0.783，平均 0.780。</div>
+<script>
+(function () {
+  var N = 20, y = [], i;
+  for (i = 0; i < N; i++) y.push(i >= 14 ? 1 : 0);
+  var mode = "kf", cur = -1, folds = [];
+  var seed = 3;
+  function rng() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+  function kfold(K, order) {
+    // 与 scikit-learn 的 KFold 相同：前 N % K 折各多 1 个
+    var res = [], start = 0;
+    for (var f = 0; f < K; f++) {
+      var size = Math.floor(N / K) + (f < N % K ? 1 : 0);
+      res.push({ test: order.slice(start, start + size) }); start += size;
+    }
+    return res;
+  }
+  function strat(K) {
+    // 与 scikit-learn 的 StratifiedKFold（不打乱）相同的分配方式
+    var yo = y.slice().sort(function (a, b) { return a - b; }), alloc = [], f, k;
+    for (f = 0; f < K; f++) { var c = [0, 0]; for (var j = f; j < N; j += K) c[yo[j]]++; alloc.push(c); }
+    var testFold = new Array(N);
+    for (k = 0; k < 2; k++) {
+      var seq = []; for (f = 0; f < K; f++) for (var r = 0; r < alloc[f][k]; r++) seq.push(f);
+      var idx = []; for (i = 0; i < N; i++) if (y[i] === k) idx.push(i);
+      idx.forEach(function (s, t) { testFold[s] = seq[t]; });
+    }
+    var res = []; for (f = 0; f < K; f++) { var te = []; for (i = 0; i < N; i++) if (testFold[i] === f) te.push(i); res.push({ test: te }); }
+    return res;
+  }
+  function tsplit(K) {
+    var ts = Math.floor(N / (K + 1)), res = [];
+    for (var f = 0; f < K; f++) {
+      var s = N - K * ts + f * ts, tr = []; for (i = 0; i < s; i++) tr.push(i);
+      var te = []; for (i = s; i < s + ts; i++) te.push(i);
+      res.push({ test: te, train: tr });
+    }
+    return res;
+  }
+  function build() {
+    var K = +document.getElementById("K").value, order = [];
+    for (i = 0; i < N; i++) order.push(i);
+    if (mode === "kf") folds = kfold(K, order);
+    else if (mode === "kfs") { seed = 3; for (i = N - 1; i > 0; i--) { var j = Math.floor(rng() * (i + 1)), t = order[i]; order[i] = order[j]; order[j] = t; } folds = kfold(K, order); }
+    else if (mode === "skf") folds = strat(K);
+    else folds = tsplit(K);
+    folds.forEach(function (f) { if (!f.train) { var s = {}; f.test.forEach(function (x) { s[x] = 1; }); f.train = []; for (i = 0; i < N; i++) if (!s[i]) f.train.push(i); } });
+    document.getElementById("Kv").textContent = K;
+    cur = -1; draw();
+  }
+  function rate(ix) { var s = 0; ix.forEach(function (x) { s += y[x]; }); return ix.length ? s / ix.length : 0; }
+  function draw() {
+    var g = document.getElementById("grid"), html = "";
+    g.style.gridTemplateColumns = "52px repeat(" + N + ", 1fr) 92px";
+    html += '<div></div>'; for (i = 0; i < N; i++) html += '<div class="hdr">' + (i + 1) + '</div>'; html += '<div class="hdr">验证集流失率</div>';
+    folds.forEach(function (f, k) {
+      var dim = cur >= 0 && k !== cur ? " dim" : "", te = {}, tr = {};
+      f.test.forEach(function (x) { te[x] = 1; }); f.train.forEach(function (x) { tr[x] = 1; });
+      html += '<div class="lab' + dim + '">第 ' + (k + 1) + ' 折</div>';
+      for (i = 0; i < N; i++) {
+        var c = te[i] ? "va" : tr[i] ? "tr" : "no";
+        html += '<div class="cell ' + c + dim + '"><span class="dot ' + (y[i] ? "y" : "n") + '"></span></div>';
+      }
+      var r = rate(f.test);
+      html += '<div class="rate' + dim + '">' + (r * 100).toFixed(0) + '%（' + Math.round(r * f.test.length) + '/' + f.test.length + '）</div>';
+    });
+    g.innerHTML = html;
+    var rs = folds.map(function (f) { return rate(f.test); }), mn = Math.min.apply(null, rs), mx = Math.max.apply(null, rs), m;
+    if (mode === "kf") m = "不打乱就按顺序切：流失客户全挤在最后几折，验证集流失率从 " + (mn * 100).toFixed(0) + "% 到 " + (mx * 100).toFixed(0) + "%，前几折训练时几乎见不到流失客户。";
+    else if (mode === "kfs") m = "打乱后好多了，但每一折的流失率仍在 " + (mn * 100).toFixed(0) + "%～" + (mx * 100).toFixed(0) + "% 之间波动，数据少、类别不平衡时更明显。";
+    else if (mode === "skf") m = "分层 K 折：每一折验证集的流失率都在 " + (mn * 100).toFixed(0) + "%～" + (mx * 100).toFixed(0) + "% 之间，尽量接近整体的 30%（每折人数很少，只能做到这样）。每一折都有流失客户，分类问题默认就用它。";
+    else m = "时间序列交叉验证：把编号当作时间先后，每一折只用前面的数据训练、预测紧接着的后面一段，训练集越来越长；最前面的 " + (N - folds.length * folds[0].test.length) + " 个样本从不当验证集。";
+    if (cur >= 0) m = "第 " + (cur + 1) + " 折：用蓝色的 " + folds[cur].train.length + " 人训练，在橙色的 " + folds[cur].test.length + " 人上验证。" + (mode !== "ts" ? "K 折下来，每个样本恰好当一次验证集。" : "");
+    document.getElementById("msg").textContent = m;
+  }
+  document.getElementById("step").onclick = function () { cur = (cur + 1) % folds.length; draw(); };
+  document.getElementById("all").onclick = function () { cur = -1; draw(); };
+  document.getElementById("K").oninput = build;
+  document.querySelectorAll("[data-m]").forEach(function (b) { b.onclick = function () {
+    mode = b.dataset.m; document.querySelectorAll("[data-m]").forEach(function (x) { x.classList.toggle("on", x === b); }); build(); }; });
+  window.KF = { set: function (m, K) { mode = m; document.querySelectorAll("[data-m]").forEach(function (x) { x.classList.toggle("on", x.dataset.m === m); }); document.getElementById("K").value = K; build(); }, folds: function () { return folds.map(function (f) { return f.test; }); } };
+  build();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>
