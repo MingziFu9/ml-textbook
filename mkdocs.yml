@@ -63,6 +63,8 @@ nav:
     - "K-Means 迭代": sims/kmeans-steps/index.md
     - "PCA 投影方向": sims/pca-projection/index.md
     - "K 折交叉验证": sims/kfold-cv/index.md
+    - "神经元与激活函数": sims/neuron-activation/index.md
+    - "神经网络训练场": sims/nn-playground/index.md
   - 学习图谱: learning-graph/index.md
   - 常见问题: faq/index.md
   - 证书考点对照: certificate.md

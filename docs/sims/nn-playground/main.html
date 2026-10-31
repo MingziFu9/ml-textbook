@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>神经网络训练场</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+canvas { width:100%; height:auto; border:1px solid var(--line); border-radius:6px; background:#fff; }
+.kpi { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px; }
+.kpi div { border:1px solid var(--line); border-radius:6px; padding:4px 8px; font-size:12px; }
+.kpi b { display:block; font-size:16px; }
+</style>
+</head>
+<body>
+<h1>神经网络训练场：两层网络怎样学会“异或”</h1>
+<div class="sub">与实验 10-1 相同的网络：2 个输入 → H 个隐藏神经元 → 1 个输出，交叉熵损失，全批量梯度下降。调隐藏神经元个数、学习率和激活函数，按“训练”看损失下降、决策区域成形。</div>
+<div class="row"><span>隐藏神经元 H</span><input type="range" id="H" min="1" max="8" step="1" value="4" aria-label="隐藏神经元个数"><b id="Hv"></b>
+  <span>学习率</span><select id="lr"><option>0.01</option><option>0.1</option><option selected>1</option><option>5</option><option>30</option></select>
+  <span>隐藏层激活</span><select id="act"><option value="sigmoid" selected>Sigmoid</option><option value="tanh">tanh</option><option value="relu">ReLU</option></select></div>
+<div class="row"><button id="t1">训练 1 轮</button><button id="t100" class="main">训练 100 轮</button><button id="t1000">训练 1000 轮</button><button id="reset">重新开始</button></div>
+<div class="grid2">
+  <canvas id="cv" width="360" height="360"></canvas>
+  <canvas id="lc" width="360" height="360"></canvas>
+</div>
+<div class="kpi"><div>已训练轮数<b id="ep"></b></div><div>损失（交叉熵）<b id="loss"></b></div><div>四个点的输出<b id="out" style="font-size:13px"></b></div></div>
+<div class="msg" id="msg"></div>
+<div class="note">左图：底色是网络对平面上每一点输出“1”的概率（红高蓝低），黑线是 0.5 的分界线；四个圆点是异或的数据，红色应输出 1，蓝色应输出 0。右图：损失随训练轮数的变化（横轴按对数刻度）。初始权重与实验 10-1 用 NumPy 随机种子 0 生成的相同，所以 H = 4、学习率 1、Sigmoid 时，数字与实验输出一致。</div>
+<script>
+(function () {
+  var INIT = {"1": [[[0.1257302210933933], [-0.1321048632913019]], [0.6404226504432821]], "2": [[[0.1257302210933933, -0.1321048632913019], [0.6404226504432821, 0.10490011715303971]], [-0.535669373161111, 0.36159505490948474]], "3": [[[0.1257302210933933, -0.1321048632913019, 0.6404226504432821], [0.10490011715303971, -0.535669373161111, 0.36159505490948474]], [1.3040000451301372, 0.9470809631292422, -0.7037352358069926]], "4": [[[0.1257302210933933, -0.1321048632913019, 0.6404226504432821, 0.10490011715303971], [-0.535669373161111, 0.36159505490948474, 1.3040000451301372, 0.9470809631292422]], [-0.7037352358069926, -1.2654214710460525, -0.6232744625373522, 0.0413259793472436]], "5": [[[0.1257302210933933, -0.1321048632913019, 0.6404226504432821, 0.10490011715303971, -0.535669373161111], [0.36159505490948474, 1.3040000451301372, 0.9470809631292422, -0.7037352358069926, -1.2654214710460525]], [-0.6232744625373522, 0.0413259793472436, -2.3250307746388343, -0.21879166393254573, -1.2459109472530652]], "6": [[[0.1257302210933933, -0.1321048632913019, 0.6404226504432821, 0.10490011715303971, -0.535669373161111, 0.36159505490948474], [1.3040000451301372, 0.9470809631292422, -0.7037352358069926, -1.2654214710460525, -0.6232744625373522, 0.0413259793472436]], [-2.3250307746388343, -0.21879166393254573, -1.2459109472530652, -0.7322673547034516, -0.5442589828573099, -0.31630015636915454]], "7": [[[0.1257302210933933, -0.1321048632913019, 0.6404226504432821, 0.10490011715303971, -0.535669373161111, 0.36159505490948474, 1.3040000451301372], [0.9470809631292422, -0.7037352358069926, -1.2654214710460525, -0.6232744625373522, 0.0413259793472436, -2.3250307746388343, -0.21879166393254573]], [-1.2459109472530652, -0.7322673547034516, -0.5442589828573099, -0.31630015636915454, 0.4116305363741328, 1.0425133694426776, -0.12853466294403426]], "8": [[[0.1257302210933933, -0.1321048632913019, 0.6404226504432821, 0.10490011715303971, -0.535669373161111, 0.36159505490948474, 1.3040000451301372, 0.9470809631292422], [-0.7037352358069926, -1.2654214710460525, -0.6232744625373522, 0.0413259793472436, -2.3250307746388343, -0.21879166393254573, -1.2459109472530652, -0.7322673547034516]], [-0.5442589828573099, -0.31630015636915454, 0.4116305363741328, 1.0425133694426776, -0.12853466294403426, 1.3664634705496859, -0.6651946734866135, 0.3515100700930197]]};
+  var X = [[0, 0], [0, 1], [1, 0], [1, 1]], Y = [0, 1, 1, 0];
+  var W1, b1, W2, b2, H, lr, act, ep, hist;
+  var A = {
+    sigmoid: { f: function (z) { return 1 / (1 + Math.exp(-z)); }, d: function (a) { return a * (1 - a); } },
+    tanh: { f: Math.tanh, d: function (a) { return 1 - a * a; } },
+    relu: { f: function (z) { return z > 0 ? z : 0; }, d: function (a) { return a > 0 ? 1 : 0; } }
+  };
+  function sig(z) { return 1 / (1 + Math.exp(-z)); }
+  function reset() {
+    H = +document.getElementById("H").value; lr = +document.getElementById("lr").value; act = document.getElementById("act").value;
+    var w = INIT[H];
+    W1 = w[0].map(function (r) { return r.slice(); }); b1 = new Array(H).fill(0);
+    W2 = w[1].slice(); b2 = 0; ep = 0; hist = [];
+    hist.push(lossNow()); draw();
+  }
+  function fwd(x) {
+    var a1 = [], z2 = b2;
+    for (var j = 0; j < H; j++) { var z = x[0] * W1[0][j] + x[1] * W1[1][j] + b1[j]; a1.push(A[act].f(z)); z2 += a1[j] * W2[j]; }
+    return { a1: a1, a2: sig(z2) };
+  }
+  function lossNow() {
+    var s = 0; X.forEach(function (x, i) { var p = Math.min(Math.max(fwd(x).a2, 1e-12), 1 - 1e-12); s += -(Y[i] * Math.log(p) + (1 - Y[i]) * Math.log(1 - p)); }); return s / 4;
+  }
+  function step() {
+    var gW1 = [new Array(H).fill(0), new Array(H).fill(0)], gb1 = new Array(H).fill(0), gW2 = new Array(H).fill(0), gb2 = 0;
+    X.forEach(function (x, i) {
+      var f = fwd(x), d2 = (f.a2 - Y[i]) / 4;
+      gb2 += d2;
+      for (var j = 0; j < H; j++) {
+        gW2[j] += f.a1[j] * d2;
+        var d1 = d2 * W2[j] * A[act].d(f.a1[j]);
+        gW1[0][j] += x[0] * d1; gW1[1][j] += x[1] * d1; gb1[j] += d1;
+      }
+    });
+    for (var j = 0; j < H; j++) { W1[0][j] -= lr * gW1[0][j]; W1[1][j] -= lr * gW1[1][j]; b1[j] -= lr * gb1[j]; W2[j] -= lr * gW2[j]; }
+    b2 -= lr * gb2; ep++; hist.push(lossNow());
+  }
+  function train(n) { for (var i = 0; i < n; i++) step(); draw(); }
+  function draw() {
+    document.getElementById("Hv").textContent = H;
+    var cv = document.getElementById("cv"), c = cv.getContext("2d"), W = cv.width, S = 6, lo = -0.5, hi = 1.5;
+    function px(v) { return (v - lo) / (hi - lo) * W; }
+    for (var gx = 0; gx < W; gx += S) for (var gy = 0; gy < W; gy += S) {
+      var x = lo + (gx + S / 2) / W * (hi - lo), y = hi - (gy + S / 2) / W * (hi - lo), p = fwd([x, y]).a2;
+      var r = Math.round(255 * (0.55 + 0.45 * p)), b = Math.round(255 * (0.55 + 0.45 * (1 - p))), g = Math.round(255 * (0.55 + 0.45 * (1 - Math.abs(p - 0.5) * 2)) * 0.95);
+      c.fillStyle = "rgb(" + r + "," + g + "," + b + ")"; c.fillRect(gx, gy, S, S);
+      if (Math.abs(p - 0.5) < 0.03) { c.fillStyle = "#000"; c.fillRect(gx + 2, gy + 2, 2, 2); }
+    }
+    X.forEach(function (x, i) {
+      c.beginPath(); c.arc(px(x[0]), W - px(x[1]), 11, 0, 7); c.fillStyle = Y[i] ? "#c62828" : "#1565c0"; c.fill(); c.lineWidth = 2; c.strokeStyle = "#fff"; c.stroke();
+      c.fillStyle = "#263238"; c.font = "12px sans-serif"; c.fillText("(" + x[0] + "," + x[1] + ")", px(x[0]) + 13, W - px(x[1]) - 8);
+    });
+    var lc = document.getElementById("lc"), l = lc.getContext("2d"), LW = lc.width;
+    l.clearRect(0, 0, LW, LW); l.strokeStyle = "#cfd8dc"; l.strokeRect(30, 10, LW - 40, LW - 40);
+    var maxE = Math.max(10, hist.length - 1), ymax = Math.max(1, Math.max.apply(null, hist));
+    function lx(e) { return 30 + Math.log10(e + 1) / Math.log10(maxE + 1) * (LW - 40); }
+    function ly(v) { return 10 + (1 - v / ymax) * (LW - 40); }
+    l.beginPath(); l.strokeStyle = "#3f51b5"; l.lineWidth = 2;
+    hist.forEach(function (v, e) { e ? l.lineTo(lx(e), ly(v)) : l.moveTo(lx(e), ly(v)); }); l.stroke();
+    l.fillStyle = "#78909c"; l.font = "11px sans-serif"; l.fillText("损失", 36, 26); l.fillText("0", 18, LW - 30);
+    l.fillText(ymax.toFixed(2), 0, 14); l.fillText("训练轮数（对数刻度）：0 → " + (hist.length - 1), 40, LW - 12);
+    var outs = X.map(function (x) { return fwd(x).a2; });
+    document.getElementById("ep").textContent = ep;
+    document.getElementById("loss").textContent = hist[hist.length - 1].toFixed(4);
+    document.getElementById("out").textContent = outs.map(function (o) { return o.toFixed(3); }).join("，");
+    var ok = outs.filter(function (o, i) { return (o > 0.5 ? 1 : 0) === Y[i]; }).length, m;
+    if (!isFinite(hist[hist.length - 1])) m = "损失变成了无穷大：学习率太大，参数“飞”出去了。";
+    else if (ok === 4) m = "四个点全部分对。隐藏层把四个点“搬”到了新的位置，在那里可以用直线分开。";
+    else if (H === 1) m = "只有 1 个隐藏神经元，网络相当于一个逻辑回归，只能画一条直线，永远学不会异或。";
+    else if (ep > 0 && lr <= 0.01) m = "学习率太小，每一步都走得很慢，训练 1000 轮损失也几乎不降。";
+    else m = "现在分对 " + ok + " 个点。继续训练，看分界线怎样弯过来。";
+    document.getElementById("msg").textContent = m;
+  }
+  document.getElementById("t1").onclick = function () { train(1); };
+  document.getElementById("t100").onclick = function () { train(100); };
+  document.getElementById("t1000").onclick = function () { train(1000); };
+  ["reset"].forEach(function (id) { document.getElementById(id).onclick = reset; });
+  ["H", "lr", "act"].forEach(function (id) { document.getElementById(id).oninput = reset; document.getElementById(id).onchange = reset; });
+  window.NN = { train: function (n) { for (var i = 0; i < n; i++) step(); draw(); return [hist[hist.length - 1], X.map(function (x) { return fwd(x).a2; })]; }, reset: reset };
+  reset();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>

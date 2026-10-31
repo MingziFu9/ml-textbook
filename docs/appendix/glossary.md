@@ -273,6 +273,28 @@ description: 本书主要术语的中英文名称、简明定义和例子，按�
 
 | 术语 | 英文 | 定义 | 例子 |
 |---|---|---|---|
+| <span id="g-神经网络"></span>神经网络 | Neural Network | 由大量神经元按层连接而成、通过数据学习连接权重的模型 | 实验 10-2 的“64 → 64 → 10”网络 |
+| <span id="g-神经元"></span>神经元 | Neuron | 神经网络的基本计算单元：对输入加权求和、加偏置，再经过激活函数得到输出 | 0.5 × 1 + 0.4 × 0 + 0.3 × 1 − 0.6 = 0.2，Sigmoid 后约 0.550 |
+| <span id="g-感知机"></span>感知机 | Perceptron | 只有一个神经元、用阶跃函数输出 0 或 1 的分类模型，预测错时按 w ← w + η(y − ŷ)x 更新权重 | 学“与”5 轮后全对：w = [0.2, 0.1]，b = −0.2 |
+| <span id="g-异或问题"></span>异或问题 | XOR Problem | 两个输入不同时输出 1、相同时输出 0，两类点交叉摆放、线性不可分，单层感知机无法解决 | (0, 1)、(1, 0) 为 1，(0, 0)、(1, 1) 为 0 |
+| <span id="g-多层感知机"></span>多层感知机 | Multilayer Perceptron (MLP) | 由输入层、一个或多个隐藏层和输出层组成、相邻层全连接的前馈神经网络 | “2 → 4 → 1”的网络学会了异或 |
+| <span id="g-激活函数"></span>激活函数 | Activation Function | 神经元对加权和做的非线性变换，使网络能表达非线性关系 | Sigmoid、Tanh、ReLU、Softmax |
+| <span id="g-ReLU"></span>ReLU | Rectified Linear Unit | 修正线性单元，小于 0 输出 0、大于 0 原样输出的激活函数，隐藏层的首选 | ReLU(−2) = 0，ReLU(3) = 3 |
+| <span id="g-隐藏层"></span>隐藏层 | Hidden Layer | 位于输入层和输出层之间的层，把输入变换成对任务更有用的新特征 | 异或网络的 4 个隐藏神经元 |
+| <span id="g-前向传播"></span>前向传播 | Forward Propagation | 输入数据从输入层出发逐层计算，直到得到输出和损失的过程 | z1 = X @ W1 + b1，a1 = sigmoid(z1)，…… |
+| <span id="g-反向传播"></span>反向传播 | Backpropagation | 从损失出发、利用链式法则逐层往回计算每个参数梯度的算法 | 手算例子中 dL/dw₂ = 2，dL/dw₁ = 12 |
+| <span id="g-链式法则"></span>链式法则 | Chain Rule | 复合函数求导的法则：L 通过 y 依赖于 x 时，dL/dx = dL/dy × dy/dx | (3w − 4)² 在 w = 2 处的导数 2 × 2 × 3 = 12 |
+| <span id="g-梯度消失"></span>梯度消失 | Vanishing Gradient | 误差往回传时层层乘上小于 1 的导数，使前面层的梯度趋近于 0、几乎无法更新的现象 | 10 层 Sigmoid 网络第 1 层的梯度是输出层的 1.5 × 10⁻⁹ |
+| <span id="g-优化器"></span>优化器 | Optimizer | 根据梯度决定怎样更新参数的算法 | SGD、带动量的 SGD、Adam |
+| <span id="g-Adam"></span>Adam | Adam | 结合动量并为每个参数自适应调整步长的优化器，默认学习率 0.001 | 学习率 0.01 时第 3 轮验证准确率就达到 0.95 |
+| <span id="g-轮次与批大小"></span>轮次与批大小 | Epoch and Batch Size | 轮次是完整看一遍全部训练数据的次数，批大小是每次更新参数所用的样本数 | 1005 个样本、批大小 32，每轮更新 32 次 |
+| <span id="g-Dropout"></span>Dropout | Dropout | 训练时每一步随机让一部分神经元输出为 0 以减轻过拟合的方法，预测时不丢弃 | `nn.Dropout(0.5)`、`keras.layers.Dropout(0.2)` |
+| <span id="g-批归一化"></span>批归一化 | Batch Normalization | 在网络层中用当前批数据的均值和标准差做标准化，再做可学习的缩放和平移，使深层网络训练更快更稳 | 4 层网络加批归一化后测试准确率从 0.113 升到 0.972 |
+| <span id="g-PyTorch"></span>PyTorch | PyTorch | Meta 开源的深度学习框架，以张量和自动求导为核心 | `nn.Sequential(nn.Linear(64, 64), nn.ReLU(), nn.Linear(64, 10))` |
+| <span id="g-张量"></span>张量 | Tensor | 深度学习框架中存放数据的多维数组，可以放在 GPU 上计算并支持自动求导 | 一批彩色图片：张数 × 通道 × 高 × 宽 |
+| <span id="g-自动求导"></span>自动求导 | Automatic Differentiation | 框架记录计算过程并自动用反向传播求出梯度的功能 | `loss.backward()` 后梯度存在 `.grad` 中 |
+| <span id="g-Keras"></span>Keras | Keras | 高层深度学习接口，用 Sequential 等方式搭建网络，Keras 3 可选 TensorFlow、PyTorch、JAX 作后端 | `model.compile(...)`、`model.fit(...)` |
+| <span id="g-TensorFlow"></span>TensorFlow | TensorFlow | 谷歌开源的深度学习框架，在移动端和生产部署方面工具丰富 | Keras 3 的默认后端 |
 
 ## 第 11 章 卷积神经网络与循环神经网络
 

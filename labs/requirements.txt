@@ -9,4 +9,14 @@ xgboost==3.2.0
 lightgbm==4.7.0
 imbalanced-learn==0.14.2
 mlxtend==0.25.0
+# 第 9 章：调参、模型解释与部署
+optuna==5.0.0
+shap==0.51.0
+fastapi==0.162.0
+uvicorn==0.54.0
+httpx==0.28.1
+gradio==6.31.0
+# 第 10、11 章：深度学习框架（PyTorch 默认安装包含 GPU 支持、体积较大，只用 CPU 可按 PyTorch 官网说明安装 CPU 版）
+torch==2.15.0
+keras==3.15.1
 jupyter
