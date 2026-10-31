@@ -14,6 +14,7 @@
 | `sms_spam.csv` | 英文手机短信及标签（ham 正常 / spam 垃圾），两列：标签、短信 | 5574 条，垃圾短信 747 条 | UCI 机器学习库 SMS Spam Collection（Almeida、Hidalgo，2011），CC BY 4.0 许可，https://doi.org/10.24432/C5CC84 ；原文件制表符分隔，这里转成 CSV，内容未改 | 第 7 章 |
 | `basket.csv` | 模拟社区超市购物小票：小票编号、商品（用“\|”分隔） | 3000 张小票，31 种商品 | 教材编写，由 `make_datasets.py` 按早餐、火锅、看球、宝宝用品等购物场景生成，内容为虚构 | 第 7 章 |
 | `orders.csv` | 模拟电商订单：订单编号、客户编号、下单日期、实付金额 | 11605 条订单，2000 个客户，2025-10-01 至 2026-09-30 | 教材编写，由 `make_datasets.py` 按新客、忠实、流失、偶尔购买等客户类型生成，内容为虚构 | 第 8 章 |
+| `store_sales.csv` | 模拟社区超市每日销量：日期、星期（1 为周一）、是否促销、节假日（无 / 春节前 / 春节 / 国庆）、销量（件） | 1096 天，2023-01-01 至 2025-12-31 | 教材编写，由 `make_datasets.py` 按趋势、星期效应、季节、节假日、促销和随机波动生成，内容为虚构 | 第 12 章 |
 | （scikit-learn 自带）葡萄酒数据 | 意大利同一产区三个品种葡萄酒的 13 项化学成分 | 178 条 | `sklearn.datasets.load_wine()`，来自 UCI 机器学习库 Wine 数据集 | 第 7 章 |
 | （scikit-learn 自带）手写数字数据 | 8×8 像素手写数字灰度图片 | 1797 张 | `sklearn.datasets.load_digits()`，来自 UCI 机器学习库 Optical Recognition of Handwritten Digits | 第 6、8 章 |
 

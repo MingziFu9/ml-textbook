@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>滑动窗口与时序预测</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+  .sl { display:grid; grid-template-columns:8em 1fr 3em; gap:6px; align-items:center; font-size:13px; }
+  .wrap { overflow-x:auto; }
+  svg { display:block; }
+  .ex button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  table.t td.y { background:#fff3e0; font-weight:bold; }
+  table.t th, table.t td { white-space:nowrap; }
+</style>
+</head>
+<body>
+<h1>滑动窗口与时序预测：把一条序列切成“特征 → 答案”的表格</h1>
+<div class="sub">社区超市最后 112 天的每日销量（与实验 12-1、12-2 同一份数据）。前 84 天用来“学”，灰色底的最后 28 天用来检验。这里做的是逐日预测：每天用到前一天为止的真实销量预测第二天。</div>
+
+<div class="sl"><span>窗口长度 W</span><input type="range" id="w" min="1" max="28" step="1" value="7"><b id="wv"></b></div>
+<div class="row"><button class="main" id="slide">窗口向右滑一格 ▶</button><button id="slide10">滑 10 格</button><button id="reset">从头滑</button></div>
+<div class="row ex" id="meth"></div>
+
+<div class="wrap"><svg id="chart" width="900" height="260"></svg></div>
+<div class="grid2">
+  <div class="box"><h2>切出来的训练样本（只显示最近 5 行）</h2><div id="tab" class="wrap"></div></div>
+  <div class="box"><h2>最后 28 天逐日预测的误差</h2><div id="res"></div></div>
+</div>
+<div class="msg" id="msg"></div>
+
+<script>
+(function () {
+  var D = {"d": ["09-11", "09-12", "09-13", "09-14", "09-15", "09-16", "09-17", "09-18", "09-19", "09-20", "09-21", "09-22", "09-23", "09-24", "09-25", "09-26", "09-27", "09-28", "09-29", "09-30", "10-01", "10-02", "10-03", "10-04", "10-05", "10-06", "10-07", "10-08", "10-09", "10-10", "10-11", "10-12", "10-13", "10-14", "10-15", "10-16", "10-17", "10-18", "10-19", "10-20", "10-21", "10-22", "10-23", "10-24", "10-25", "10-26", "10-27", "10-28", "10-29", "10-30", "10-31", "11-01", "11-02", "11-03", "11-04", "11-05", "11-06", "11-07", "11-08", "11-09", "11-10", "11-11", "11-12", "11-13", "11-14", "11-15", "11-16", "11-17", "11-18", "11-19", "11-20", "11-21", "11-22", "11-23", "11-24", "11-25", "11-26", "11-27", "11-28", "11-29", "11-30", "12-01", "12-02", "12-03", "12-04", "12-05", "12-06", "12-07", "12-08", "12-09", "12-10", "12-11", "12-12", "12-13", "12-14", "12-15", "12-16", "12-17", "12-18", "12-19", "12-20", "12-21", "12-22", "12-23", "12-24", "12-25", "12-26", "12-27", "12-28", "12-29", "12-30", "12-31"], "y": [1973, 2803, 2948, 2581, 1926, 1967, 1949, 2443, 2509, 2935, 2641, 1900, 1936, 2029, 2455, 2281, 2892, 2710, 1946, 2165, 2761, 2911, 3143, 4003, 3741, 2585, 2615, 2198, 2202, 2268, 3030, 2970, 2034, 2248, 2017, 2345, 2345, 2926, 2932, 2192, 2512, 2500, 2527, 2331, 3160, 2718, 2313, 2118, 2925, 2445, 2509, 2715, 2769, 2292, 2136, 2216, 2580, 2681, 2978, 2945, 1997, 1921, 2416, 2485, 2644, 3800, 3466, 2396, 2221, 2570, 2280, 2554, 3109, 2964, 2295, 2284, 2562, 2952, 2319, 3233, 2488, 2156, 2236, 2265, 2308, 2681, 3155, 3414, 2235, 2270, 2246, 2482, 2806, 3098, 3477, 2169, 2184, 2139, 3347, 2497, 3340, 3165, 2260, 2208, 2426, 2579, 2577, 3111, 3012, 2147, 2245, 2245], "p": [0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]};
+  var Y = D.y, N = Y.length, NT = 84, W = 7, pos = 0, M = "lr";
+  var METH = { avg: "窗口平均", lag7: "上周同一天", lr: "线性回归（用窗口里的 W 个数作特征）" };
+  function windows(w) { var X = [], T = []; for (var i = 0; i + w < NT; i++) { X.push(Y.slice(i, i + w)); T.push(Y[i + w]); } return { X: X, T: T }; }
+  function solve(A, b) {               // 高斯消元解 A x = b
+    var n = b.length, M2 = A.map(function (r, i) { return r.concat([b[i]]); });
+    for (var c = 0; c < n; c++) {
+      var p = c; for (var r = c + 1; r < n; r++) if (Math.abs(M2[r][c]) > Math.abs(M2[p][c])) p = r;
+      var t = M2[c]; M2[c] = M2[p]; M2[p] = t;
+      for (r = 0; r < n; r++) if (r !== c) { var f = M2[r][c] / M2[c][c]; for (var k = c; k <= n; k++) M2[r][k] -= f * M2[c][k]; }
+    }
+    return M2.map(function (r, i) { return r[n] / r[i]; });
+  }
+  function fitLR(w) {                  // 最小二乘：销量先除以 1000，数值更稳定
+    var s = windows(w), n = w + 1, A = [], b = [];
+    for (var i = 0; i < n; i++) { A.push(new Array(n).fill(0)); b.push(0); }
+    s.X.forEach(function (x, j) {
+      var v = x.map(function (q) { return q / 1000; }).concat([1]), t = s.T[j] / 1000;
+      for (var a = 0; a < n; a++) { b[a] += v[a] * t; for (var c = 0; c < n; c++) A[a][c] += v[a] * v[c]; }
+    });
+    return solve(A, b);
+  }
+  function predict(m, w) {
+    var coef = m === "lr" ? fitLR(w) : null, P = [];
+    for (var t = NT; t < N; t++) {
+      var x = Y.slice(t - w, t);
+      if (m === "avg") P.push(x.reduce(function (a, b) { return a + b; }, 0) / w);
+      else if (m === "lag7") P.push(Y[t - 7]);
+      else P.push(1000 * (x.reduce(function (a, q, i) { return a + coef[i] * q / 1000; }, 0) + coef[w]));
+    }
+    return P;
+  }
+  function err(P) { var a = 0, b = 0; P.forEach(function (p, i) { var e = Math.abs(Y[NT + i] - p); a += e; b += e / Y[NT + i]; }); return [a / P.length, 100 * b / P.length]; }
+  function draw() {
+    W = +document.getElementById("w").value; document.getElementById("wv").textContent = W;
+    var s = windows(W), nS = s.X.length; pos = Math.min(pos, nS);
+    var svg = document.getElementById("chart"), Wd = 900, Hd = 260, L = 46, R = 10, T = 16, B = 34;
+    var lo = 1500, hi = 4200, xs = function (i) { return L + i * (Wd - L - R) / (N - 1); }, ys = function (v) { return T + (hi - v) * (Hd - T - B) / (hi - lo); };
+    var g = '<rect x="' + xs(NT - 0.5) + '" y="' + T + '" width="' + (xs(N - 1) - xs(NT - 0.5) + 4) + '" height="' + (Hd - T - B) + '" fill="#eceff1"/>';
+    [2000, 2500, 3000, 3500, 4000].forEach(function (v) { g += '<line x1="' + L + '" x2="' + (Wd - R) + '" y1="' + ys(v) + '" y2="' + ys(v) + '" stroke="#eceff1"/><text x="' + (L - 6) + '" y="' + (ys(v) + 4) + '" font-size="10" text-anchor="end" fill="#78909c">' + v + "</text>"; });
+    for (var i = 0; i < N; i += 14) g += '<text x="' + xs(i) + '" y="' + (Hd - 14) + '" font-size="10" text-anchor="middle" fill="#78909c">' + D.d[i] + "</text>";
+    if (pos > 0) { var a = pos - 1; g += '<rect x="' + (xs(a) - 3) + '" y="' + T + '" width="' + (xs(a + W - 1) - xs(a) + 6) + '" height="' + (Hd - T - B) + '" fill="#bbdefb" opacity="0.6"/><rect x="' + (xs(a + W) - 3) + '" y="' + T + '" width="6" height="' + (Hd - T - B) + '" fill="#ffcc80"/>'; }
+    g += '<polyline fill="none" stroke="#263238" stroke-width="1.2" points="' + Y.map(function (v, i) { return xs(i) + "," + ys(v); }).join(" ") + '"/>';
+    D.p.forEach(function (p, i) { if (p) g += '<circle cx="' + xs(i) + '" cy="' + ys(Y[i]) + '" r="3" fill="#ff9800"/>'; });
+    var P = predict(M, W);
+    g += '<polyline fill="none" stroke="#e53935" stroke-width="1.6" points="' + P.map(function (v, i) { return xs(NT + i) + "," + ys(v); }).join(" ") + '"/>';
+    g += '<text x="' + (xs(NT) + 4) + '" y="' + (T + 12) + '" font-size="11" fill="#e53935">红线：' + METH[M] + '的预测</text><text x="' + (L + 4) + '" y="' + (T + 12) + '" font-size="11" fill="#78909c">橙点：促销日</text>';
+    svg.innerHTML = g;
+    var rows = s.X.slice(Math.max(0, pos - 5), pos).map(function (x, k) { var j = Math.max(0, pos - 5) + k; return "<tr><td>" + D.d[j + W] + "</td>" + (W <= 8 ? x.map(function (v) { return "<td>" + v + "</td>"; }).join("") : "<td>" + x.slice(0, 3).join("，") + " …（共 " + W + " 个）</td>") + '<td class="y">' + s.T[j] + "</td></tr>"; }).join("");
+    var head = "<tr><th>预测日</th>" + (W <= 8 ? Array.apply(null, Array(W)).map(function (_, k) { return "<th>前 " + (W - k) + " 天</th>"; }).join("") : "<th>前 " + W + " 天的销量</th>") + "<th>答案 y</th></tr>";
+    document.getElementById("tab").innerHTML = pos ? '<table class="t">' + head + rows + "</table><div class='note'>已切出 " + pos + " / " + nS + " 个样本（84 天、窗口 " + W + " 天，可切 " + nS + " 个）</div>" : "<div class='note'>点“窗口向右滑一格”：蓝框是窗口里的 W 天（特征），橙条是下一天（答案）。</div>";
+    var html = '<table class="t"><tr><th>方法</th><th>MAE（件）</th><th>MAPE</th></tr>';
+    ["avg", "lag7", "lr"].forEach(function (m) { var e = err(predict(m, W)); html += "<tr" + (m === M ? ' style="font-weight:bold"' : "") + "><td>" + METH[m].replace("（用窗口里的 W 个数作特征）", "") + "</td><td>" + e[0].toFixed(1) + "</td><td>" + e[1].toFixed(2) + "%</td></tr>"; });
+    document.getElementById("res").innerHTML = html + "</table>";
+    var e1 = err(predict("avg", W))[0], e2 = err(predict("lag7", W))[0], e3 = err(predict("lr", W))[0];
+    var cf = fitLR(W).slice(0, W).map(function (c, i) { return { k: W - i, c: c }; }).sort(function (a, b) { return b.c - a.c; }).slice(0, 2);
+    var top = "线性回归学到的系数中，最大的是“前 " + cf[0].k + " 天”（" + cf[0].c.toFixed(2) + "）" + (W > 1 ? "和“前 " + cf[1].k + " 天”（" + cf[1].c.toFixed(2) + "）" : "") + "。";
+    document.getElementById("msg").innerHTML = top + (W < 7 ? "窗口不到 7 天，看不到上周同一天，抓不住“周末多、周中少”的规律，误差大。把 W 调到 7 试试。" :
+      "窗口包含了上周同一天，线性回归的误差和“上周同一天”接近" + (e3 < e2 ? "，还略好一些。" : "。") +
+      "窗口越长特征越多，可用来训练的样本越少（现在 " + (84 - W) + " 个），要小心过拟合。");
+    document.getElementById("slide").disabled = pos >= nS;
+  }
+  document.getElementById("meth").innerHTML = "<span class='lbl'>红线画哪种方法：</span>" + Object.keys(METH).map(function (k) { return "<button data-m='" + k + "'" + (k === M ? " class='on'" : "") + ">" + METH[k].replace("（用窗口里的 W 个数作特征）", "") + "</button>"; }).join("");
+  document.querySelectorAll("#meth button").forEach(function (b) { b.onclick = function () { M = b.dataset.m; document.querySelectorAll("#meth button").forEach(function (x) { x.classList.toggle("on", x === b); }); draw(); }; });
+  document.getElementById("slide").onclick = function () { pos++; draw(); };
+  document.getElementById("slide10").onclick = function () { pos += 10; draw(); };
+  document.getElementById("reset").onclick = function () { pos = 0; draw(); };
+  document.getElementById("w").oninput = function () { pos = 0; draw(); };
+  window.TS = { err: function (m, w) { document.getElementById("w").value = w; draw(); return err(predict(m, w)); } };
+  draw();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>

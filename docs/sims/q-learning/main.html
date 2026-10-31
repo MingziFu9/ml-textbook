@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Q 学习网格世界</title>
+<link rel="stylesheet" href="../common/sim.css">
+<style>
+  .sl { display:grid; grid-template-columns:9em 1fr 3em; gap:6px; align-items:center; font-size:13px; }
+  .stage { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+  svg { display:block; }
+  .eq { font-size:13.5px; line-height:1.9; }
+</style>
+</head>
+<body>
+<h1>Q 学习网格世界：在冰湖上试错，学会走到终点</h1>
+<div class="sub">与实验 12-3 相同的 4×4 冰湖（不打滑）。从 S 出发，走到 G 得 1 分；掉进冰窟窿 H 本回合结束，得 0 分；撞墙原地不动。每格四个小数字是四个动作的 Q 值，箭头是 Q 值最大的动作。</div>
+
+<div class="sl"><span>学习率 α</span><input type="range" id="al" min="0.05" max="1" step="0.05" value="0.5"><b id="alv"></b></div>
+<div class="sl"><span>折扣因子 γ</span><input type="range" id="ga" min="0.5" max="1" step="0.01" value="0.95"><b id="gav"></b></div>
+<div class="sl"><span>探索率 ε</span><input type="range" id="ep" min="0" max="1" step="0.05" value="0.3"><b id="epv"></b></div>
+<div class="row"><button class="main" id="s1">走一步 ▶</button><button id="e1">跑完一回合</button><button id="e100">跑 100 回合</button><button id="reset">清空 Q 表</button></div>
+
+<div class="stage">
+  <svg id="grid" width="400" height="400"></svg>
+  <div style="flex:1;min-width:260px">
+    <div class="box eq" id="eq"></div>
+    <div class="box"><h2>训练记录</h2><div id="stat" class="eq"></div><svg id="curve" width="300" height="110"></svg></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var MAP = ["SFFF", "FHFH", "FFFH", "HFFG"], AR = ["←", "↓", "→", "↑"], DR = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  var Q, s, ep, wins, hist, steps, seed, last;
+  function rnd() { seed = (seed + 0x6D2B79F5) | 0; var t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+  function cell(x) { return MAP[Math.floor(x / 4)][x % 4]; }
+  function move(x, a) { var r = Math.floor(x / 4) + DR[a][0], c = x % 4 + DR[a][1]; return r < 0 || r > 3 || c < 0 || c > 3 ? x : r * 4 + c; }
+  function par(id) { return +document.getElementById(id).value; }
+  function reset() { Q = []; for (var i = 0; i < 16; i++) Q.push([0, 0, 0, 0]); s = 0; ep = 0; wins = 0; hist = []; steps = 0; seed = 12345; last = null; draw(); }
+  function greedy(x) { var m = Math.max.apply(null, Q[x]), c = []; Q[x].forEach(function (v, a) { if (v === m) c.push(a); }); return c[Math.floor(rnd() * c.length)]; }
+  function step() {
+    var a, how;
+    if (rnd() < par("ep")) { a = Math.floor(rnd() * 4); how = "探索（随机）"; } else { a = greedy(s); how = "利用（选 Q 值最大的）"; }
+    var s2 = move(s, a), c = cell(s2), r = c === "G" ? 1 : 0, term = c === "G" || c === "H";
+    var old = Q[s][a], tgt = r + (term ? 0 : par("ga") * Math.max.apply(null, Q[s2]));
+    Q[s][a] = old + par("al") * (tgt - old);
+    last = { s: s, a: a, s2: s2, r: r, old: old, tgt: tgt, nw: Q[s][a], how: how, term: term, c: c };
+    s = s2; steps++;
+    if (term || steps >= 100) { ep++; if (r) wins++; hist.push(r); s = 0; steps = 0; }
+    return term || last.s2 === 0 && steps === 0;
+  }
+  function episode() { var e = ep; while (ep === e) step(); }
+  function draw() {
+    ["al", "ga", "ep"].forEach(function (id) { document.getElementById(id + "v").textContent = par(id).toFixed(2); });
+    var g = "", S = 100;
+    for (var x = 0; x < 16; x++) {
+      var r = Math.floor(x / 4), c = x % 4, ch = cell(x), X = c * S, Y = r * S, m = Math.max.apply(null, Q[x]);
+      var fill = ch === "H" ? "#cfd8dc" : ch === "G" ? "#c8e6c9" : "rgb(" + Math.round(255 - m * 110) + "," + Math.round(255 - m * 70) + ",255)";
+      g += '<rect x="' + X + '" y="' + Y + '" width="' + S + '" height="' + S + '" fill="' + fill + '" stroke="#90a4ae"/>';
+      if (ch === "H" || ch === "G") { g += '<text x="' + (X + 50) + '" y="' + (Y + 58) + '" font-size="22" text-anchor="middle" fill="' + (ch === "H" ? "#c62828" : "#2e7d32") + '">' + (ch === "H" ? "H 冰窟窿" : "G 终点") + "</text>"; continue; }
+      var pos = [[X + 6, Y + 54, "start"], [X + 50, Y + 94, "middle"], [X + 94, Y + 54, "end"], [X + 50, Y + 16, "middle"]];
+      Q[x].forEach(function (v, a) { g += '<text x="' + pos[a][0] + '" y="' + pos[a][1] + '" font-size="11" text-anchor="' + pos[a][2] + '" fill="' + (v === m && m > 0 ? "#1a237e" : "#78909c") + '">' + v.toFixed(2) + "</text>"; });
+      if (m > 0) g += '<text x="' + (X + 50) + '" y="' + (Y + 60) + '" font-size="24" text-anchor="middle" fill="#3f51b5">' + AR[Q[x].indexOf(m)] + "</text>";
+      if (ch === "S") g += '<text x="' + (X + 6) + '" y="' + (Y + 30) + '" font-size="12" fill="#37474f">S</text>';
+    }
+    var ar = Math.floor(s / 4), ac = s % 4;
+    g += '<circle cx="' + (ac * S + 84) + '" cy="' + (ar * S + 82) + '" r="10" fill="#ff9800" stroke="#fff" stroke-width="2"/>';
+    document.getElementById("grid").innerHTML = g;
+    var e = document.getElementById("eq");
+    if (!last) e.innerHTML = "橙色圆点是智能体。点“走一步”开始。<br>更新规则：Q(s,a) ← Q(s,a) + α × [r + γ × max Q(s′,·) − Q(s,a)]";
+    else e.innerHTML = "在格子 " + last.s + " 用 ε = " + par("ep").toFixed(2) + " 决定：" + last.how + "，动作 <b>" + AR[last.a] + "</b>，到了格子 " + last.s2 + (last.c === "G" ? "（终点，奖励 1）" : last.c === "H" ? "（冰窟窿，回合结束）" : last.s2 === last.s ? "（撞墙，原地不动）" : "") +
+      "<br>目标 = r + γ × max Q(s′) = " + last.r + (last.term ? "（回合结束，不再加未来）" : " + " + par("ga").toFixed(2) + " × " + ((last.tgt - last.r) / par("ga")).toFixed(3)) + " = " + last.tgt.toFixed(3) +
+      "<br>Q(" + last.s + ", " + AR[last.a] + ") = " + last.old.toFixed(3) + " + " + par("al").toFixed(2) + " × (" + last.tgt.toFixed(3) + " − " + last.old.toFixed(3) + ") = <b>" + last.nw.toFixed(3) + "</b>";
+    var k = Math.min(20, hist.length), recent = k ? hist.slice(-k).reduce(function (a, b) { return a + b; }, 0) / k : 0;
+    document.getElementById("stat").innerHTML = "已完成 " + ep + " 回合，到达终点 " + wins + " 次；最近 " + k + " 回合成功率 " + recent.toFixed(2) + "<br>起点四个动作的 Q 值：" + Q[0].map(function (v, a) { return AR[a] + " " + v.toFixed(3); }).join("，") + "<br>最短 6 步，起点最优 Q 值应为 γ⁵ = " + Math.pow(par("ga"), 5).toFixed(3);
+    var cv = "", n = hist.length;
+    if (n) { var pts = [], w = 20; for (var i = 0; i < n; i++) { var a0 = Math.max(0, i - w + 1), sm = 0; for (var j = a0; j <= i; j++) sm += hist[j]; pts.push((10 + 280 * i / Math.max(1, n - 1)) + "," + (100 - 90 * sm / (i - a0 + 1))); } cv = '<polyline fill="none" stroke="#3f51b5" stroke-width="1.5" points="' + pts.join(" ") + '"/>'; }
+    document.getElementById("curve").innerHTML = '<line x1="10" y1="100" x2="290" y2="100" stroke="#cfd8dc"/><line x1="10" y1="10" x2="290" y2="10" stroke="#eceff1"/><text x="292" y="14" font-size="10" fill="#78909c">1</text><text x="292" y="104" font-size="10" fill="#78909c">0</text><text x="12" y="22" font-size="10" fill="#78909c">成功率（最近 20 回合滑动平均）</text>' + cv;
+  }
+  document.getElementById("s1").onclick = function () { step(); draw(); };
+  document.getElementById("e1").onclick = function () { episode(); draw(); };
+  document.getElementById("e100").onclick = function () { for (var i = 0; i < 100; i++) episode(); draw(); };
+  document.getElementById("reset").onclick = reset;
+  ["al", "ga", "ep"].forEach(function (id) { document.getElementById(id).oninput = draw; });
+  window.QL = { run: function (n) { for (var i = 0; i < n; i++) episode(); draw(); return Q.map(function (q) { return Math.max.apply(null, q); }); }, reset: reset, Q: function () { return Q; } };
+  reset();
+})();
+</script>
+<script src="../common/sim.js"></script>
+</body>
+</html>

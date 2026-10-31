@@ -67,6 +67,8 @@ nav:
     - "神经网络训练场": sims/nn-playground/index.md
     - "卷积计算器": sims/conv-calculator/index.md
     - "RNN 与 LSTM 逐步展开": sims/rnn-lstm/index.md
+    - "Q 学习网格世界": sims/q-learning/index.md
+    - "滑动窗口与时序预测": sims/ts-window/index.md
   - 学习图谱: learning-graph/index.md
   - 常见问题: faq/index.md
   - 证书考点对照: certificate.md

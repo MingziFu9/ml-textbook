@@ -11,6 +11,7 @@
     card_fraud.csv     信用卡交易，欺诈约占 1%，20000 行（第 4、8 章）
     basket.csv         社区超市购物小票，3000 张（第 7 章）
     orders.csv         电商订单，2000 个客户一年的订单（第 8 章）
+    store_sales.csv    社区超市每日销量，2023—2025 年三年（第 12 章）
 """
 import numpy as np
 import pandas as pd
@@ -283,6 +284,36 @@ def make_orders(n_customers=2000, seed=SEED + 5):
     return df.reset_index(drop=True)
 
 
+def make_store_sales(seed=SEED + 6):
+    """社区超市每日销量（件），2023-01-01 至 2025-12-31。销量 = 基数 × 趋势 × 星期效应 × 年内季节 × 节假日 × 促销 × 随机波动。
+    春节前十天备年货销量上升，春节七天大幅下降；国庆七天上升；每月随机安排 2～3 天促销，提前公布。"""
+    rng = np.random.default_rng(seed)
+    d = pd.date_range("2023-01-01", "2025-12-31", freq="D")
+    t = np.arange(len(d)) / 365.25
+    trend = 1 + 0.08 * t                                                   # 每年增长约 8%
+    week = np.array([0.88, 0.86, 0.9, 0.94, 1.04, 1.22, 1.16])[d.day_of_week]  # 周一到周日
+    season = 1 + 0.08 * np.cos(2 * np.pi * (d.day_of_year - 20) / 365.25)    # 冬季略高、夏季略低
+    holiday = np.array(["无"] * len(d), dtype=object)
+    eff = np.ones(len(d))
+    for ny in ["2023-01-22", "2024-02-10", "2025-01-29"]:                  # 春节（正月初一）
+        ny = pd.Timestamp(ny)
+        before = (d >= ny - pd.Timedelta(days=10)) & (d < ny)
+        during = (d >= ny) & (d < ny + pd.Timedelta(days=7))
+        holiday[before], eff[before] = "春节前", 1.35
+        holiday[during], eff[during] = "春节", 0.55
+    for y in [2023, 2024, 2025]:
+        nd = (d >= pd.Timestamp(f"{y}-10-01")) & (d <= pd.Timestamp(f"{y}-10-07"))
+        holiday[nd], eff[nd] = "国庆", 1.25
+    promo = np.zeros(len(d), dtype=int)
+    for (y, m), idx in pd.Series(np.arange(len(d))).groupby([d.year, d.month]):
+        ok = [i for i in idx if holiday[i] == "无"]
+        promo[rng.choice(ok, rng.integers(2, 4), replace=False)] = 1
+    noise = rng.lognormal(0, 0.06, len(d))
+    sales = np.round(2000 * trend * week * season * eff * np.where(promo == 1, 1.2, 1.0) * noise).astype(int)
+    return pd.DataFrame({"日期": d.strftime("%Y-%m-%d"), "星期": d.day_of_week + 1, "是否促销": promo,
+                         "节假日": holiday, "销量": sales})
+
+
 if __name__ == "__main__":
     loan = make_loan()
     loan.to_csv("loan_apply.csv", index=False, encoding="utf-8-sig")
@@ -302,3 +333,6 @@ if __name__ == "__main__":
     orders = make_orders()
     orders.to_csv("orders.csv", index=False, encoding="utf-8-sig")
     print(f"orders.csv：{len(orders)} 条订单，{orders['客户编号'].nunique()} 个客户")
+    store = make_store_sales()
+    store.to_csv("store_sales.csv", index=False, encoding="utf-8-sig")
+    print(f"store_sales.csv：{len(store)} 天，日均销量 {store['销量'].mean():.0f} 件，促销 {store['是否促销'].sum()} 天")

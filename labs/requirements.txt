@@ -20,3 +20,6 @@ gradio==6.31.0
 torch==2.15.0
 keras==3.15.1
 jupyter
+# 第 12 章：时间序列与强化学习
+statsmodels==0.15.0
+gymnasium==1.4.0
