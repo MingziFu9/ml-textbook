@@ -65,6 +65,8 @@ nav:
     - "K 折交叉验证": sims/kfold-cv/index.md
     - "神经元与激活函数": sims/neuron-activation/index.md
     - "神经网络训练场": sims/nn-playground/index.md
+    - "卷积计算器": sims/conv-calculator/index.md
+    - "RNN 与 LSTM 逐步展开": sims/rnn-lstm/index.md
   - 学习图谱: learning-graph/index.md
   - 常见问题: faq/index.md
   - 证书考点对照: certificate.md
