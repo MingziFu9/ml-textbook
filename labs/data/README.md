@@ -5,8 +5,8 @@
 | 文件 | 内容 | 规模 | 来源 | 使用章节 |
 |---|---|---|---|---|
 | `loan_small.csv` | 贷款申请小数据：年龄、有工作、有自己的房子、信贷情况、是否批准 | 15 条 | 李航《统计学习方法》（第 2 版）第 5 章表 5.1，教学引用 | 第 5 章 |
-| `loan_apply.csv` | 模拟贷款审批记录：年龄、工作年限、月收入、有房产、负债率、信用等级、近两年逾期次数、申请金额、是否批准 | 2000 条 | 教材编写，由 `make_datasets.py` 按固定随机种子生成，内容为虚构 | 第 5 章 |
-| `telco_churn.csv` | 模拟电信客户流失数据：年龄、在网月数、合约类型、宽带类型、技术支持、视频会员、付款方式、月消费、累计消费、近半年投诉次数、是否流失 | 5000 条 | 教材编写，由 `make_datasets.py` 按固定随机种子生成，内容为虚构 | 第 4、5 章 |
+| `loan_apply.csv` | 模拟贷款审批记录：年龄、工作年限、月收入、有房产、负债率、信用等级、近两年逾期次数、申请金额、是否批准 | 2000 条 | 教材编写，由 `make_datasets.py` 按固定随机种子生成，内容为虚构 | 第 1、5、6 章 |
+| `telco_churn.csv` | 模拟电信客户流失数据：年龄、在网月数、合约类型、宽带类型、技术支持、视频会员、付款方式、月消费、累计消费、近半年投诉次数、是否流失 | 5000 条 | 教材编写，由 `make_datasets.py` 按固定随机种子生成，内容为虚构 | 第 4、5、9 章 |
 | `house_raw.csv` | 模拟广州二手房挂牌记录（含故意加入的缺失、重复、格式不一致和录入错误）：房源编号、区域、小区、面积、户型、楼层、建成年份、装修、朝向、距地铁站、挂牌日期、单价、总价 | 3060 条 | 教材编写，由 `make_datasets.py` 按各区挂牌价格的大致水平生成，内容为虚构 | 第 2 章 |
 | `house_clean.csv` | `house_raw.csv` 按实验 2-2 的清洗规范处理后的结果（未填充缺失值） | 3000 条 | 由 `labs/ch02/lab2_2_clean.py` 生成 | 第 2、3 章 |
 | `card_fraud.csv` | 模拟信用卡交易：交易金额、交易小时、商户类别、是否境外、是否新设备、距上次交易时间、近 24 小时交易次数、距常用地距离、是否欺诈 | 20000 条，欺诈 1.04% | 教材编写，由 `make_datasets.py` 按固定随机种子生成，内容为虚构 | 第 4、8 章 |
@@ -16,7 +16,10 @@
 | `orders.csv` | 模拟电商订单：订单编号、客户编号、下单日期、实付金额 | 11605 条订单，2000 个客户，2025-10-01 至 2026-09-30 | 教材编写，由 `make_datasets.py` 按新客、忠实、流失、偶尔购买等客户类型生成，内容为虚构 | 第 8 章 |
 | `store_sales.csv` | 模拟社区超市每日销量：日期、星期（1 为周一）、是否促销、节假日（无 / 春节前 / 春节 / 国庆）、销量（件） | 1096 天，2023-01-01 至 2025-12-31 | 教材编写，由 `make_datasets.py` 按趋势、星期效应、季节、节假日、促销和随机波动生成，内容为虚构 | 第 12 章 |
 | （scikit-learn 自带）葡萄酒数据 | 意大利同一产区三个品种葡萄酒的 13 项化学成分 | 178 条 | `sklearn.datasets.load_wine()`，来自 UCI 机器学习库 Wine 数据集 | 第 7 章 |
-| （scikit-learn 自带）手写数字数据 | 8×8 像素手写数字灰度图片 | 1797 张 | `sklearn.datasets.load_digits()`，来自 UCI 机器学习库 Optical Recognition of Handwritten Digits | 第 6、8 章 |
+| （scikit-learn 自带）手写数字数据 | 8×8 像素手写数字灰度图片 | 1797 张 | `sklearn.datasets.load_digits()`，来自 UCI 机器学习库 Optical Recognition of Handwritten Digits | 第 6、8、10 章 |
+| （scikit-learn 自带）鸢尾花数据 | 三种鸢尾花的花萼、花瓣长宽 | 150 条 | `sklearn.datasets.load_iris()`，来自 UCI 机器学习库 Iris 数据集（Fisher，1936） | 第 1 章 |
+| （scikit-learn 自带）示例照片 `china.jpg` | 427 × 640 彩色照片 | 1 张 | `sklearn.datasets.load_sample_image("china.jpg")`，scikit-learn 随附的示例图片，作者以知识共享（Creative Commons）许可发布 | 第 11 章 |
+| （Keras 下载）Fashion-MNIST | 10 类服装商品的 28 × 28 灰度图 | 训练 60 000 张、测试 10 000 张，约 30 MB | `keras.datasets.fashion_mnist.load_data()` 首次运行时下载；Zalando Research，MIT 许可，https://github.com/zalandoresearch/fashion-mnist ；下载失败时从课程资源拷贝到用户目录的 `.keras/datasets/` | 第 11 章 |
 
 **规模要求**：学生实验默认在普通笔记本电脑的 CPU 上运行，单个数据文件尽量不超过 20 MB，一次训练不超过 10 分钟。更大的数据只用于课堂演示（学校 A40 服务器）或云算力实验，放在网盘，这里只写下载地址和校验值，不提交到仓库。
 

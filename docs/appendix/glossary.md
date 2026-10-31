@@ -165,7 +165,6 @@ description: 本书主要术语的中英文名称、简明定义和例子，按�
 | <span id="g-弱学习器"></span>弱学习器 | Weak Learner | 单独使用时只比随机猜测略好的简单模型，是 Boosting 的组成单元 | 只有一层的决策树桩 |
 | <span id="g-AdaBoost"></span>AdaBoost | AdaBoost (Adaptive Boosting) | 每轮调高被错分样本的权重、按错误率给各弱学习器分配话语权的 Boosting 算法 | 错误率 0.3 的弱学习器话语权约为 0.42 |
 | <span id="g-梯度提升树"></span>梯度提升树 | Gradient Boosting Decision Tree, GBDT | 每棵新树拟合当前模型的残差（负梯度），按学习率累加的 Boosting 模型 | 起点预测 140 万元，第一棵树把残差平方和从 5600 降到 1550 |
-| <span id="g-残差"></span>残差 | Residual | 真实值减去当前预测值得到的差 | 真实价 100 万元、预测 140 万元，残差为 −40 万元 |
 | <span id="g-早停"></span>早停 | Early Stopping | 在验证集指标连续若干轮不再改善时停止训练的方法 | 学习率 0.1 的 XGBoost 在第 49 棵树时早停 |
 | <span id="g-XGBoost"></span>XGBoost | XGBoost (eXtreme Gradient Boosting) | 陈天奇等人开发的梯度提升树实现，加入正则化、二阶近似和缺失值自动处理 | `xgb.XGBClassifier(max_depth=3, learning_rate=0.1)` |
 | <span id="g-LightGBM"></span>LightGBM | LightGBM (Light Gradient Boosting Machine) | 微软亚洲研究院开发的梯度提升树实现，用直方图算法和按叶子生长提高速度、节省内存 | `lgb.LGBMClassifier(num_leaves=8)` |

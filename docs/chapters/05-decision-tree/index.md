@@ -29,7 +29,7 @@ description: 决策树怎样用一连串问题做判断，怎样用信息增益�
     - 用 pandas 读取 CSV 文件（[附录 A Python 速查](../../appendix/a-python.md)）。
 
 
-??? abstract "本章概念清单（29 个，点击查看定义和例子）"
+??? abstract "本章概念清单（28 个，点击查看定义和例子）"
     1. [决策树](../../appendix/glossary.md#g-决策树)
     2. [根节点](../../appendix/glossary.md#g-根节点)
     3. [叶节点](../../appendix/glossary.md#g-叶节点)
@@ -55,10 +55,9 @@ description: 决策树怎样用一连串问题做判断，怎样用信息增益�
     23. [弱学习器](../../appendix/glossary.md#g-弱学习器)
     24. [AdaBoost](../../appendix/glossary.md#g-AdaBoost)
     25. [梯度提升树](../../appendix/glossary.md#g-梯度提升树)
-    26. [残差](../../appendix/glossary.md#g-残差)
-    27. [早停](../../appendix/glossary.md#g-早停)
-    28. [XGBoost](../../appendix/glossary.md#g-XGBoost)
-    29. [LightGBM](../../appendix/glossary.md#g-LightGBM)
+    26. [早停](../../appendix/glossary.md#g-早停)
+    27. [XGBoost](../../appendix/glossary.md#g-XGBoost)
+    28. [LightGBM](../../appendix/glossary.md#g-LightGBM)
 
 ## 情景导入
 
