@@ -62,3 +62,55 @@ lesson_plan:
   online_ratio: 0.5                   # 线上学时占比（开放大学以线上为主，按实际改）
   teacher: ""                         # 授课教师，留空则教案上留出填写位置
   school: ""                          # 学校名称，留空则不显示
+
+# 首页“先玩一玩”轮播：按轮播顺序写，第 1 个放画面最震撼的。sim 是 docs/sims/ 下的目录名，hook 是一句问句，play 是一句玩法；
+# steps 是录短视频时自动做的操作（写法见 编写规范.md“首页轮播”）。改完运行 python tools/showcase.py record 重录视频。
+showcase_tagline: "拖一拖、点一点，看算法怎样从数据里学出规律"
+showcase:
+  - sim: dbscan-density
+    hook: "两道弯月缠在一起，算法能把它们分开吗？"
+    play: "调一下半径 eps，颜色马上重新分组。"
+    vh: 800
+    steps:
+      - ["slide", "#eps", 0.1, {"hold": 1}]
+      - ["slide", "#eps", 0.65, {"sec": 1.6, "hold": 1}]
+      - ["slide", "#eps", 0.3, {"hold": 1}]
+      - ["poster"]
+      - ["click", "球形（3 群）", {"hold": 1.2}]
+  - sim: knn-regions
+    hook: "改一下 K，彩色地盘就重新划分"
+    play: "在图上点一点，看新样本被分到哪一类。"
+    steps:
+      - ["slide", "#K", 1, {"hold": 1}]
+      - ["slide", "#K", 30, {"sec": 1.6, "hold": 1}]
+      - ["slide", "#K", 5, {"hold": 0.6}]
+      - ["click", "曼哈顿距离", {"hold": 1}]
+      - ["click", "不标准化", {"hold": 1.2}]
+      - ["poster"]
+  - sim: decision-tree-split
+    hook: "贷款批不批？看一棵树自己学会提问"
+    play: "按信息增益一层层长出来。"
+    steps:
+      - ["click", "用它划分", {"nth": 2, "hold": 1}]
+      - ["click", "按信息增益自动生长", {"hold": 2.2}]
+      - ["poster"]
+      - ["click", "重置", {"hold": 0.8}]
+  - sim: svm-margin
+    hook: "点一下添加数据点，分界线马上跟着动"
+    play: "换成 RBF 核，直线变成弯曲的边界。"
+    vh: 880
+    steps:
+      - ["click", "加一个异常点", {"hold": 1}]
+      - ["slide", "#C", 0.3, {"hold": 0.8}]
+      - ["click", "月牙形（实验 6-2）", {"hold": 0.6}]
+      - ["click", "RBF 核", {"hold": 1}]
+      - ["slide", "#G", 3.5, {"hold": 1}]
+      - ["click", "同心圆（实验 6-2）", {"hold": 1.2}]
+      - ["poster"]
+  - sim: q-learning
+    hook: "掉进冰窟窿 100 次之后，机器人学会了绕路"
+    play: "一键跑 100 回合，看箭头指向终点。"
+    steps:
+      - ["click", "跑 100 回合", {"n": 3, "gap": 0.7, "hold": 1}]
+      - ["poster"]
+      - ["click", "走一步 ▶", {"n": 5, "gap": 0.35, "hold": 1}]

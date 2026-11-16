@@ -5,6 +5,22 @@
 !!! abstract "课程信息"
     5 学分 · 90 学时（理论 60 学时 + 实验 30 学时）· 12 章 · 36 个实验 · 第 3 学期 · 闭卷
 
+<!-- showcase:start -->
+## 先玩一玩
+
+<p class="sc-tagline">拖一拖、点一点，看算法怎样从数据里学出规律</p>
+
+<div class="showcase" aria-label="精选交互动画">
+<ol class="sc-list">
+<li data-sim="sims/dbscan-density/main.html" data-video="assets/showcase/dbscan-density" data-title="DBSCAN 密度聚类" data-play="调一下半径 eps，颜色马上重新分组。"><img src="assets/showcase/dbscan-density.jpg" alt="DBSCAN 密度聚类截图" loading="lazy"><p class="sc-hook">两道弯月缠在一起，算法能把它们分开吗？</p><p><b>DBSCAN 密度聚类</b>　调一下半径 eps，颜色马上重新分组。</p><p><a href="sims/dbscan-density/main.html">打开动画</a>　<a class="sc-chap" href="chapters/08-clustering/" title="第 8 章 聚类、降维与异常检测">去读第8章 →</a></p></li>
+<li data-sim="sims/knn-regions/main.html" data-video="assets/showcase/knn-regions" data-title="KNN 决策区域" data-play="在图上点一点，看新样本被分到哪一类。"><img src="assets/showcase/knn-regions.jpg" alt="KNN 决策区域截图" loading="lazy"><p class="sc-hook">改一下 K，彩色地盘就重新划分</p><p><b>KNN 决策区域</b>　在图上点一点，看新样本被分到哪一类。</p><p><a href="sims/knn-regions/main.html">打开动画</a>　<a class="sc-chap" href="chapters/07-knn-bayes-rules/" title="第 7 章 K 近邻、朴素贝叶斯与关联规则">去读第7章 →</a></p></li>
+<li data-sim="sims/decision-tree-split/main.html" data-video="assets/showcase/decision-tree-split" data-title="决策树生长" data-play="按信息增益一层层长出来。"><img src="assets/showcase/decision-tree-split.jpg" alt="决策树生长截图" loading="lazy"><p class="sc-hook">贷款批不批？看一棵树自己学会提问</p><p><b>决策树生长</b>　按信息增益一层层长出来。</p><p><a href="sims/decision-tree-split/main.html">打开动画</a>　<a class="sc-chap" href="chapters/05-decision-tree/" title="第 5 章 决策树与集成学习">去读第5章 →</a></p></li>
+<li data-sim="sims/svm-margin/main.html" data-video="assets/showcase/svm-margin" data-title="SVM 间隔与核函数" data-play="换成 RBF 核，直线变成弯曲的边界。"><img src="assets/showcase/svm-margin.jpg" alt="SVM 间隔与核函数截图" loading="lazy"><p class="sc-hook">点一下添加数据点，分界线马上跟着动</p><p><b>SVM 间隔与核函数</b>　换成 RBF 核，直线变成弯曲的边界。</p><p><a href="sims/svm-margin/main.html">打开动画</a>　<a class="sc-chap" href="chapters/06-svm/" title="第 6 章 支持向量机">去读第6章 →</a></p></li>
+<li data-sim="sims/q-learning/main.html" data-video="assets/showcase/q-learning" data-title="Q 学习网格世界" data-play="一键跑 100 回合，看箭头指向终点。"><img src="assets/showcase/q-learning.jpg" alt="Q 学习网格世界截图" loading="lazy"><p class="sc-hook">掉进冰窟窿 100 次之后，机器人学会了绕路</p><p><b>Q 学习网格世界</b>　一键跑 100 回合，看箭头指向终点。</p><p><a href="sims/q-learning/main.html">打开动画</a>　<a class="sc-chap" href="chapters/12-timeseries-rl/" title="第 12 章 时间序列预测与强化学习入门">去读第12章 →</a></p></li>
+</ol>
+</div>
+<!-- showcase:end -->
+
 ## 这本书讲什么
 
 机器学习研究怎样让计算机从数据里自己总结规律，再用规律去预测和决策。银行判断贷款会不会违约，电商预测下个月卖多少货，外卖平台估算送达时间，医院辅助筛查病灶，背后都是机器学习模型；今天的大模型也建立在它的基本思想之上。
