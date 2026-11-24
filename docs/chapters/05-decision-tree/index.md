@@ -330,6 +330,22 @@ flowchart LR
 - **投票法**：训练几个不同类型的模型，比如逻辑回归、决策树、K 近邻，让它们投票。直接数票数叫“硬投票”；把每个模型输出的概率取平均再判断，叫“软投票”，通常效果更好。scikit-learn 中对应 `VotingClassifier`。
 - **Stacking**（堆叠）：把几个模型的预测结果当作新的特征，再训练一个“元模型”去学习怎样综合它们，好比请一位主审法官听取几位陪审员的意见后做最终判决。Stacking 在数据竞赛中很常用，但结构复杂、容易过拟合，业务中用得比前三种少。scikit-learn 中对应 `StackingClassifier`。
 
+??? microvideo "思维工具微课｜三个臭皮匠，什么时候顶个诸葛亮？　4 分 08 秒"
+
+    <video class="mv-video" controls preload="none" playsinline poster="../../assets/video/m4.jpg">
+      <source src="../../assets/video/m4.mp4" type="video/mp4">
+    </video>
+
+    **这一集的思维工具：权衡表。** 什么时候用：更强的办法，人人说好。怎么用：写下好在哪，再写下代价。局限：有些代价，用过才知道。
+
+    **看完选两件做：**
+
+    - 玩一玩：看“Bagging 与 Boosting”动画里怎么投票。
+    - 审一审 AI：问它随机森林有什么缺点。
+    - 想一想自己：上次开会有没有不同的声音。
+
+    <p class="mv-note">本片配音和部分画面由 AI 生成。</p>
+
 ## 5.5 随机森林
 
 ### 5.5.1 两种随机：样本随机和特征随机
